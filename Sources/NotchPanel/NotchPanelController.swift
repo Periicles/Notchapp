@@ -9,8 +9,19 @@ final class NotchPanelController: NSObject {
 
     private let panel: NotchPanelWindow
     private let sensorPanel: NotchPanelWindow
-    private let hostingView: NSHostingView<NotchPanelView>
+    private var hostingView: NSHostingView<NotchPanelView>!
     private let settingsPopover = NSPopover()
+    private lazy var settingsContentController: NSHostingController<SettingsView> = {
+        NSHostingController(
+            rootView: SettingsView(
+                preferences: preferences,
+                calendarManager: calendarManager,
+                onPreferencesChanged: { [weak self] in
+                    self?.handlePreferencesChanged()
+                }
+            )
+        )
+    }()
     private var hideWorkItem: DispatchWorkItem?
 
     init(
@@ -37,14 +48,16 @@ final class NotchPanelController: NSObject {
             defer: false
         )
 
+        super.init()
+
         hostingView = NSHostingView(
             rootView: NotchPanelView(
                 progressModel: progressModel,
-                onSettingsTapped: {}
+                onSettingsTapped: { [weak self] in
+                    self?.toggleSettingsPopover()
+                }
             )
         )
-
-        super.init()
 
         configurePanel()
         configureSensorPanel()
@@ -65,12 +78,6 @@ final class NotchPanelController: NSObject {
         panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
         panel.contentView?.addSubview(hostingView)
         panel.orderFrontRegardless()
-        hostingView.rootView = NotchPanelView(
-            progressModel: progressModel,
-            onSettingsTapped: { [weak self] in
-                self?.toggleSettingsPopover()
-            }
-        )
 
         if let trackingView = panel.contentView as? TrackingContainerView {
             trackingView.onMouseEntered = { [weak self] in
@@ -105,6 +112,10 @@ final class NotchPanelController: NSObject {
     @objc
     private func handleScreenChange() {
         refreshLayout()
+        Task { @MainActor in
+            await calendarManager.refreshEvents(using: preferences)
+            progressModel.refreshSnapshot()
+        }
     }
 
     private func refreshLayout() {
@@ -124,18 +135,12 @@ final class NotchPanelController: NSObject {
             return
         }
 
-        settingsPopover.behavior = .transient
-        settingsPopover.animates = true
-        settingsPopover.contentSize = NSSize(width: 320, height: 300)
-        settingsPopover.contentViewController = NSHostingController(
-            rootView: SettingsView(
-                preferences: preferences,
-                calendarManager: calendarManager,
-                onPreferencesChanged: { [weak self] in
-                    self?.handlePreferencesChanged()
-                }
-            )
-        )
+        if settingsPopover.contentViewController !== settingsContentController {
+            settingsPopover.behavior = .transient
+            settingsPopover.animates = true
+            settingsPopover.contentSize = NSSize(width: 320, height: 300)
+            settingsPopover.contentViewController = settingsContentController
+        }
 
         let anchorRect = NSRect(
             x: contentView.bounds.maxX - 52,
