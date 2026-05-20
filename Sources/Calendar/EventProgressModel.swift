@@ -11,8 +11,10 @@ struct EventProgressSnapshot {
 
     let title: String
     let progress: Double
+    let startTimeLabel: String
+    let endTimeLabel: String
     let elapsedLabel: String
-    let trailingLabel: String
+    let remainingLabel: String
     let statusLabel: String
     let tint: Color
     let state: State
@@ -20,8 +22,10 @@ struct EventProgressSnapshot {
     static let empty = EventProgressSnapshot(
         title: "",
         progress: 0,
+        startTimeLabel: "",
+        endTimeLabel: "",
         elapsedLabel: "",
-        trailingLabel: "",
+        remainingLabel: "",
         statusLabel: "",
         tint: .clear,
         state: .empty
@@ -30,8 +34,10 @@ struct EventProgressSnapshot {
     static let idle = EventProgressSnapshot(
         title: "No meeting",
         progress: 0,
+        startTimeLabel: "",
+        endTimeLabel: "",
         elapsedLabel: "",
-        trailingLabel: "",
+        remainingLabel: "",
         statusLabel: "Nothing in progress right now",
         tint: Color.secondary.opacity(0.35),
         state: .idle
@@ -67,7 +73,6 @@ final class EventProgressModel: ObservableObject {
     }
 
     func setHoverVisible(_ visible: Bool) {
-        guard snapshot.state != .empty else { return }
         isHoverVisible = visible
     }
 
@@ -88,9 +93,6 @@ final class EventProgressModel: ObservableObject {
         let isEmpty = resolvedSnapshot.state == .empty
 
         snapshot = resolvedSnapshot
-        if isEmpty {
-            isHoverVisible = false
-        }
 
         if wasEmpty != isEmpty {
             onEmptyStateChanged?(isEmpty)

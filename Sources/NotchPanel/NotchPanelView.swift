@@ -11,12 +11,11 @@ struct NotchPanelView: View {
             NotchSurface(isExpanded: isExpanded)
                 .frame(
                     width: isExpanded ? ScreenHelper.panelWidth : ScreenHelper.collapsedWidth(),
-                    height: isExpanded ? ScreenHelper.panelHeight : ScreenHelper.closedHeight()
+                    height: isExpanded ? ScreenHelper.openNotchSize.height : ScreenHelper.closedHeight()
                 )
-                .shadow(color: .black.opacity(isExpanded ? 0.34 : 0.22), radius: isExpanded ? 22 : 10, y: isExpanded ? 10 : 4)
 
             NotchContentView(progressModel: progressModel)
-                .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight)
+                .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
                 .opacity(isExpanded ? 1 : 0)
                 .blur(radius: isExpanded ? 0 : 5)
                 .scaleEffect(isExpanded ? 1 : 0.975, anchor: .top)
@@ -43,7 +42,7 @@ struct NotchContentView: View {
     var body: some View {
         let snapshot = progressModel.snapshot
 
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(snapshot.title)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
@@ -52,61 +51,113 @@ struct NotchContentView: View {
 
                 Spacer(minLength: 0)
 
-                if snapshot.state == .inProgress {
-                    Text(snapshot.trailingLabel)
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.84))
-                } else {
-                    Text(snapshot.trailingLabel)
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.72))
-                }
+                TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
             }
             .padding(.trailing, 46)
 
-            VStack(alignment: .leading, spacing: 10) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.11))
-                            .frame(height: 9)
-
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        snapshot.tint.opacity(0.95),
-                                        snapshot.tint.opacity(0.68),
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: max(12, geo.size.width * snapshot.progress), height: 9)
-                    }
-                }
+            VStack(alignment: .leading, spacing: 12) {
+                AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint)
                 .frame(maxWidth: .infinity)
-                .frame(height: 9)
+                .frame(height: 13)
 
                 HStack(spacing: 12) {
-                    Text(snapshot.elapsedLabel)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.56))
+                    MetricLabel(title: "Elapsed", value: snapshot.elapsedLabel)
 
                     Spacer(minLength: 0)
 
-                    Text(snapshot.statusLabel)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.72))
+                    MetricLabel(title: "Remaining", value: snapshot.remainingLabel)
                 }
             }
         }
         .padding(.horizontal, 28)
         .padding(.top, 28)
         .padding(.bottom, 22)
-        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight)
+        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
         .allowsHitTesting(false)
+    }
+}
+
+private struct AnimatedProgressBar: View {
+    let progress: Double
+    let tint: Color
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 60)) { timeline in
+            GeometryReader { geo in
+                let width = geo.size.width
+                let fillWidth = max(16, width * progress)
+                let phase = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.7) / 1.7
+                let highlightWidth = max(44, fillWidth * 0.32)
+                let travel = fillWidth + highlightWidth * 2
+                let highlightX = CGFloat(phase) * travel - highlightWidth
+
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.11))
+
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    tint.opacity(0.95),
+                                    tint.opacity(0.68),
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: fillWidth)
+                        .overlay(alignment: .leading) {
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .white.opacity(0), location: 0),
+                                    .init(color: .white.opacity(0.34), location: 0.5),
+                                    .init(color: .white.opacity(0), location: 1),
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            .frame(width: highlightWidth)
+                            .offset(x: highlightX)
+                            .blendMode(.screen)
+                        }
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+}
+
+private struct TimeRangeView: View {
+    let start: String
+    let end: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(start)
+            Text("-")
+                .foregroundStyle(.white.opacity(0.38))
+            Text(end)
+        }
+        .font(.system(size: 15, weight: .semibold, design: .rounded))
+        .monospacedDigit()
+        .foregroundStyle(.white.opacity(0.78))
+    }
+}
+
+private struct MetricLabel: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Text(title)
+                .foregroundStyle(.white.opacity(0.42))
+            Text(value.isEmpty ? "--:--:--" : value)
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.78))
+        }
+        .font(.system(size: 14, weight: .medium, design: .rounded))
     }
 }
 

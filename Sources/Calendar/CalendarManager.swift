@@ -69,16 +69,18 @@ final class CalendarManager: ObservableObject {
             let total = currentEvent.endDate.timeIntervalSince(currentEvent.startDate)
             let elapsed = now.timeIntervalSince(currentEvent.startDate)
             let progress = min(max(elapsed / max(total, 1), 0), 1)
-            let elapsedMinutes = max(Int(elapsed / 60), 0)
-            let remaining = max(Int(currentEvent.endDate.timeIntervalSince(now) / 60), 0)
+            let elapsedSeconds = max(Int(elapsed), 0)
+            let remainingSeconds = max(Int(currentEvent.endDate.timeIntervalSince(now)), 0)
             let tint = Color(nsColor: NSColor(cgColor: currentEvent.calendar.cgColor) ?? .controlAccentColor)
 
             return EventProgressSnapshot(
                 title: currentEvent.title.nilIfEmpty ?? "Current Meeting",
                 progress: progress,
-                elapsedLabel: format(minutes: elapsedMinutes),
-                trailingLabel: "\(remaining)m",
-                statusLabel: "Ends \(formattedTime(currentEvent.endDate))",
+                startTimeLabel: formattedTime(currentEvent.startDate),
+                endTimeLabel: formattedTime(currentEvent.endDate),
+                elapsedLabel: formatDuration(seconds: elapsedSeconds),
+                remainingLabel: formatDuration(seconds: remainingSeconds),
+                statusLabel: "In progress",
                 tint: tint,
                 state: .inProgress
             )
@@ -90,9 +92,11 @@ final class CalendarManager: ObservableObject {
                 return EventProgressSnapshot(
                     title: nextEvent.title.nilIfEmpty ?? "Upcoming Meeting",
                     progress: 0,
+                    startTimeLabel: formattedTime(nextEvent.startDate),
+                    endTimeLabel: formattedTime(nextEvent.endDate),
                     elapsedLabel: "",
-                    trailingLabel: "in \(minutes)m",
-                    statusLabel: "Starts \(formattedTime(nextEvent.startDate))",
+                    remainingLabel: formatDuration(seconds: max(Int(nextEvent.startDate.timeIntervalSince(now)), 0)),
+                    statusLabel: "Starts soon",
                     tint: .accentColor,
                     state: .startingSoon
                 )
@@ -142,15 +146,12 @@ final class CalendarManager: ObservableObject {
         }
     }
 
-    private func format(minutes: Int) -> String {
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
+    private func formatDuration(seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let seconds = seconds % 60
 
-        if hours > 0 {
-            return "\(hours)h \(remainingMinutes)m"
-        }
-
-        return "\(remainingMinutes)m"
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
     private func formattedTime(_ date: Date) -> String {
