@@ -5,13 +5,18 @@ import SwiftUI
 @MainActor
 final class Preferences: ObservableObject {
     private enum Keys {
-        static let selectedCalendarIDs = "selectedCalendarIDs"
+        static let selectedCalendarIdentifier = "selectedCalendarIdentifier"
         static let showsNoMeetingState = "showsNoMeetingState"
+        static let legacySelectedCalendarIDs = "selectedCalendarIDs"
     }
 
-    @Published var selectedCalendarIDs: [String] {
+    @Published var selectedCalendarIdentifier: String? {
         didSet {
-            defaults.set(selectedCalendarIDs, forKey: Keys.selectedCalendarIDs)
+            if let selectedCalendarIdentifier {
+                defaults.set(selectedCalendarIdentifier, forKey: Keys.selectedCalendarIdentifier)
+            } else {
+                defaults.removeObject(forKey: Keys.selectedCalendarIdentifier)
+            }
         }
     }
 
@@ -25,14 +30,38 @@ final class Preferences: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.selectedCalendarIDs = defaults.stringArray(forKey: Keys.selectedCalendarIDs) ?? []
+
+        Self.migrateLegacyMultiSelectIfNeeded(in: defaults)
+
+        self.selectedCalendarIdentifier = defaults.string(forKey: Keys.selectedCalendarIdentifier)
         self.showsNoMeetingState = defaults.object(forKey: Keys.showsNoMeetingState) as? Bool ?? false
     }
 
-    func ensureDefaultSelection(using calendars: [EKCalendar]) {
-        guard selectedCalendarIDs.isEmpty else { return }
-        selectedCalendarIDs = calendars
+    func ensureDefaultSelection(using calendars: [EKCalendar], store: EKEventStore) {
+        guard selectedCalendarIdentifier == nil else { return }
+
+        if let systemDefault = store.defaultCalendarForNewEvents?.calendarIdentifier,
+           calendars.contains(where: { $0.calendarIdentifier == systemDefault }) {
+            selectedCalendarIdentifier = systemDefault
+            return
+        }
+
+        selectedCalendarIdentifier = calendars
             .filter { $0.type != .subscription }
-            .map(\.calendarIdentifier)
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            .first?
+            .calendarIdentifier
+    }
+
+    static func migrateLegacyMultiSelectIfNeeded(in defaults: UserDefaults) {
+        guard defaults.object(forKey: Keys.selectedCalendarIdentifier) == nil,
+              let legacy = defaults.stringArray(forKey: Keys.legacySelectedCalendarIDs) else {
+            return
+        }
+
+        if let firstID = legacy.first {
+            defaults.set(firstID, forKey: Keys.selectedCalendarIdentifier)
+        }
+        defaults.removeObject(forKey: Keys.legacySelectedCalendarIDs)
     }
 }
