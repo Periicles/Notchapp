@@ -105,6 +105,10 @@ final class NotchPanelController: NSObject {
     @objc
     private func handleScreenChange() {
         refreshLayout()
+        Task { @MainActor in
+            await calendarManager.refreshEvents(using: preferences)
+            progressModel.refreshSnapshot()
+        }
     }
 
     private func refreshLayout() {
