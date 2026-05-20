@@ -19,22 +19,13 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Tracked Calendars")
+                Text("Tracked Calendar")
                     .font(.subheadline.weight(.semibold))
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
                         ForEach(calendarManager.availableCalendars, id: \.calendarIdentifier) { calendar in
-                            Toggle(isOn: binding(for: calendar)) {
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color(nsColor: NSColor(cgColor: calendar.cgColor) ?? .controlAccentColor))
-                                        .frame(width: 8, height: 8)
-                                    Text(calendar.title)
-                                        .font(.system(size: 12))
-                                }
-                            }
-                            .toggleStyle(.checkbox)
+                            calendarRow(for: calendar)
                         }
                     }
                 }
@@ -55,7 +46,7 @@ struct SettingsView: View {
         }
         .padding(14)
         .frame(width: 320)
-        .onChange(of: preferences.selectedCalendarIDs) { _, _ in
+        .onChange(of: preferences.selectedCalendarIdentifier) { _, _ in
             onPreferencesChanged()
         }
         .onChange(of: preferences.showsNoMeetingState) { _, _ in
@@ -63,16 +54,34 @@ struct SettingsView: View {
         }
     }
 
-    private func binding(for calendar: EKCalendar) -> Binding<Bool> {
-        Binding {
-            preferences.selectedCalendarIDs.contains(calendar.calendarIdentifier)
-        } set: { isEnabled in
-            if isEnabled {
-                preferences.selectedCalendarIDs.append(calendar.calendarIdentifier)
-            } else {
-                preferences.selectedCalendarIDs.removeAll { $0 == calendar.calendarIdentifier }
+    private func calendarRow(for calendar: EKCalendar) -> some View {
+        let isSelected = preferences.selectedCalendarIdentifier == calendar.calendarIdentifier
+        let dotColor = Color(nsColor: NSColor(cgColor: calendar.cgColor) ?? .controlAccentColor)
+
+        return Button {
+            if !isSelected {
+                preferences.selectedCalendarIdentifier = calendar.calendarIdentifier
             }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .font(.system(size: 14))
+
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 8, height: 8)
+
+                Text(calendar.title)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 2)
         }
+        .buttonStyle(.plain)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {

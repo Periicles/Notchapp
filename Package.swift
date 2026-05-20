@@ -17,5 +17,10 @@ let package = Package(
             name: "NotchBar",
             path: "Sources"
         ),
+        .testTarget(
+            name: "NotchBarTests",
+            dependencies: ["NotchBar"],
+            path: "Tests/NotchBarTests"
+        ),
     ]
 )

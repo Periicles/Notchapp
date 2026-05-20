@@ -29,7 +29,7 @@ final class CalendarManager: ObservableObject {
         guard authorizationState == .granted else { return }
 
         availableCalendars = store.calendars(for: .event)
-        preferences.ensureDefaultSelection(using: availableCalendars)
+        preferences.ensureDefaultSelection(using: availableCalendars, store: store)
         installStoreObserver(preferences: preferences)
         await refreshEvents(using: preferences)
         startPolling(preferences: preferences)
@@ -38,12 +38,17 @@ final class CalendarManager: ObservableObject {
     func refreshEvents(using preferences: Preferences) async {
         guard authorizationState == .granted else { return }
 
-        let calendars = selectedCalendars(using: preferences)
+        guard let calendar = selectedCalendar(using: preferences) else {
+            currentEvent = nil
+            nextEvent = nil
+            return
+        }
+
         let now = Date()
         let predicate = store.predicateForEvents(
             withStart: now.addingTimeInterval(-8 * 3600),
             end: now.addingTimeInterval(2 * 3600),
-            calendars: calendars
+            calendars: [calendar]
         )
 
         let events = store.events(matching: predicate)
@@ -54,14 +59,9 @@ final class CalendarManager: ObservableObject {
         nextEvent = events.first(where: { $0.startDate > now })
     }
 
-    func selectedCalendars(using preferences: Preferences) -> [EKCalendar]? {
-        let selectedIDs = preferences.selectedCalendarIDs
-        guard !selectedIDs.isEmpty else {
-            return availableCalendars.filter { $0.type != .subscription }
-        }
-
-        let calendars = availableCalendars.filter { selectedIDs.contains($0.calendarIdentifier) }
-        return calendars.isEmpty ? nil : calendars
+    func selectedCalendar(using preferences: Preferences) -> EKCalendar? {
+        guard let identifier = preferences.selectedCalendarIdentifier else { return nil }
+        return availableCalendars.first { $0.calendarIdentifier == identifier }
     }
 
     func currentSnapshot(now: Date = .now) -> EventProgressSnapshot? {
