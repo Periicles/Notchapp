@@ -11,6 +11,17 @@ final class NotchPanelController: NSObject {
     private let sensorPanel: NotchPanelWindow
     private var hostingView: NSHostingView<NotchPanelView>!
     private let settingsPopover = NSPopover()
+    private lazy var settingsContentController: NSHostingController<SettingsView> = {
+        NSHostingController(
+            rootView: SettingsView(
+                preferences: preferences,
+                calendarManager: calendarManager,
+                onPreferencesChanged: { [weak self] in
+                    self?.handlePreferencesChanged()
+                }
+            )
+        )
+    }()
     private var hideWorkItem: DispatchWorkItem?
 
     init(
@@ -124,18 +135,12 @@ final class NotchPanelController: NSObject {
             return
         }
 
-        settingsPopover.behavior = .transient
-        settingsPopover.animates = true
-        settingsPopover.contentSize = NSSize(width: 320, height: 300)
-        settingsPopover.contentViewController = NSHostingController(
-            rootView: SettingsView(
-                preferences: preferences,
-                calendarManager: calendarManager,
-                onPreferencesChanged: { [weak self] in
-                    self?.handlePreferencesChanged()
-                }
-            )
-        )
+        if settingsPopover.contentViewController !== settingsContentController {
+            settingsPopover.behavior = .transient
+            settingsPopover.animates = true
+            settingsPopover.contentSize = NSSize(width: 320, height: 300)
+            settingsPopover.contentViewController = settingsContentController
+        }
 
         let anchorRect = NSRect(
             x: contentView.bounds.maxX - 52,
