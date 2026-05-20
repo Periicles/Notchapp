@@ -40,17 +40,28 @@ final class Preferences: ObservableObject {
     func ensureDefaultSelection(using calendars: [EKCalendar], store: EKEventStore) {
         guard selectedCalendarIdentifier == nil else { return }
 
-        if let systemDefault = store.defaultCalendarForNewEvents?.calendarIdentifier,
-           calendars.contains(where: { $0.calendarIdentifier == systemDefault }) {
-            selectedCalendarIdentifier = systemDefault
-            return
-        }
-
-        selectedCalendarIdentifier = calendars
+        let availableIDs = calendars.map(\.calendarIdentifier)
+        let nonSubscriptionSorted = calendars
             .filter { $0.type != .subscription }
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-            .first?
-            .calendarIdentifier
+            .map(\.calendarIdentifier)
+
+        selectedCalendarIdentifier = Self.pickDefaultIdentifier(
+            available: availableIDs,
+            nonSubscriptionAlphabetical: nonSubscriptionSorted,
+            systemDefault: store.defaultCalendarForNewEvents?.calendarIdentifier
+        )
+    }
+
+    static func pickDefaultIdentifier(
+        available: [String],
+        nonSubscriptionAlphabetical: [String],
+        systemDefault: String?
+    ) -> String? {
+        if let systemDefault, available.contains(systemDefault) {
+            return systemDefault
+        }
+        return nonSubscriptionAlphabetical.first
     }
 
     static func migrateLegacyMultiSelectIfNeeded(in defaults: UserDefaults) {
