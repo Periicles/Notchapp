@@ -42,6 +42,26 @@ struct NotchContentView: View {
     var body: some View {
         let snapshot = progressModel.snapshot
 
+        Group {
+            switch snapshot.state {
+            case .inProgress:
+                InProgressContent(snapshot: snapshot)
+            case .startingSoon, .upcomingToday, .emptyToday, .noCalendar:
+                SecondaryContent(message: snapshot.secondaryMessage ?? "")
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 28)
+        .padding(.bottom, 22)
+        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct InProgressContent: View {
+    let snapshot: EventProgressSnapshot
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(snapshot.title)
@@ -69,11 +89,24 @@ struct NotchContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 28)
-        .padding(.top, 28)
-        .padding(.bottom, 22)
-        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
-        .allowsHitTesting(false)
+    }
+}
+
+private struct SecondaryContent: View {
+    let message: String
+
+    var body: some View {
+        VStack {
+            Spacer(minLength: 0)
+            Text(message)
+                .font(.system(size: 17, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.78))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .padding(.trailing, 46)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
