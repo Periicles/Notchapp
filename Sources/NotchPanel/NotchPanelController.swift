@@ -9,7 +9,7 @@ final class NotchPanelController: NSObject {
 
     private let panel: NotchPanelWindow
     private let sensorPanel: NotchPanelWindow
-    private let hostingView: NSHostingView<NotchPanelView>
+    private var hostingView: NSHostingView<NotchPanelView>!
     private let settingsPopover = NSPopover()
     private var hideWorkItem: DispatchWorkItem?
 
@@ -37,14 +37,16 @@ final class NotchPanelController: NSObject {
             defer: false
         )
 
+        super.init()
+
         hostingView = NSHostingView(
             rootView: NotchPanelView(
                 progressModel: progressModel,
-                onSettingsTapped: {}
+                onSettingsTapped: { [weak self] in
+                    self?.toggleSettingsPopover()
+                }
             )
         )
-
-        super.init()
 
         configurePanel()
         configureSensorPanel()
@@ -65,12 +67,6 @@ final class NotchPanelController: NSObject {
         panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
         panel.contentView?.addSubview(hostingView)
         panel.orderFrontRegardless()
-        hostingView.rootView = NotchPanelView(
-            progressModel: progressModel,
-            onSettingsTapped: { [weak self] in
-                self?.toggleSettingsPopover()
-            }
-        )
 
         if let trackingView = panel.contentView as? TrackingContainerView {
             trackingView.onMouseEntered = { [weak self] in
