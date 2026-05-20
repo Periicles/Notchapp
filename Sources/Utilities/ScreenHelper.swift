@@ -1,57 +1,71 @@
 import AppKit
 
 enum ScreenHelper {
-    static let panelWidth: CGFloat = 620
-    static let panelHeight: CGFloat = 132
-    static let panelTopBleed: CGFloat = 10
-    static let collapsedPadding: CGFloat = 24
-    private static let fallbackNotchWidth: CGFloat = 200
-    private static let fallbackMenuBarHeight: CGFloat = 38
-    private static let sensorExtraWidth: CGFloat = 92
-    private static let sensorExtraHeight: CGFloat = 24
+    static let openNotchSize = CGSize(width: 640, height: 190)
+    static let panelWidth: CGFloat = openNotchSize.width
+    static let panelHeight: CGFloat = openNotchSize.height
+    static let panelTopBleed: CGFloat = 2
+    private static let closedNotchFallbackSize = CGSize(width: 185, height: 32)
 
     static func panelRect() -> NSRect {
-        let frame = physicalNotchRect()
+        let screenFrame = preferredScreen().frame
         return NSRect(
-            x: frame.midX - panelWidth / 2,
-            y: frame.maxY - panelHeight + panelTopBleed,
+            x: screenFrame.midX - panelWidth / 2,
+            y: screenFrame.maxY - panelHeight + panelTopBleed,
             width: panelWidth,
             height: panelHeight
         )
     }
 
     static func sensorRect() -> NSRect {
-        let frame = physicalNotchRect()
-        let width = collapsedWidth() + sensorExtraWidth
-        let height = closedHeight() + sensorExtraHeight
+        let closedRect = closedNotchRect()
 
         return NSRect(
-            x: frame.midX - width / 2,
-            y: frame.maxY - height,
-            width: width,
-            height: height
+            x: closedRect.minX,
+            y: closedRect.minY,
+            width: closedRect.width,
+            height: closedRect.height
         )
     }
 
     static func collapsedWidth() -> CGFloat {
-        min(panelWidth * 0.42, inferredNotchWidth(for: preferredScreen()) + collapsedPadding)
+        closedNotchSize().width
     }
 
     static func closedHeight() -> CGFloat {
-        min(panelHeight * 0.48, physicalNotchRect().height + 18)
+        closedNotchSize().height
     }
 
-    private static func physicalNotchRect() -> NSRect {
+    private static func closedNotchRect() -> NSRect {
         let screen = preferredScreen()
-        let menuBarHeight = screen.frame.height - screen.visibleFrame.height - screen.visibleFrame.origin.y
-        let notchHeight = max(menuBarHeight, fallbackMenuBarHeight)
-        let notchWidth = inferredNotchWidth(for: screen)
+        let closedSize = closedNotchSize(for: screen)
 
         return NSRect(
-            x: screen.frame.midX - notchWidth / 2,
-            y: screen.frame.maxY - notchHeight,
-            width: notchWidth,
-            height: notchHeight
+            x: screen.frame.midX - closedSize.width / 2,
+            y: screen.frame.maxY - closedSize.height,
+            width: closedSize.width,
+            height: closedSize.height
+        )
+    }
+
+    private static func closedNotchSize(for screen: NSScreen = preferredScreen()) -> CGSize {
+        var width = closedNotchFallbackSize.width
+        var height = closedNotchFallbackSize.height
+
+        if let topLeftArea = screen.auxiliaryTopLeftArea,
+           let topRightArea = screen.auxiliaryTopRightArea {
+            width = screen.frame.width - topLeftArea.width - topRightArea.width + 4
+        }
+
+        if screen.safeAreaInsets.top > 0 {
+            height = screen.safeAreaInsets.top
+        } else {
+            height = max(closedNotchFallbackSize.height, screen.frame.maxY - screen.visibleFrame.maxY)
+        }
+
+        return CGSize(
+            width: max(width, closedNotchFallbackSize.width),
+            height: max(height, closedNotchFallbackSize.height)
         )
     }
 
@@ -65,15 +79,5 @@ enum ScreenHelper {
         }
 
         return CGDisplayIsBuiltin(deviceDescription) != 0
-    }
-
-    private static func inferredNotchWidth(for screen: NSScreen) -> CGFloat {
-        if #available(macOS 12.0, *),
-           let left = screen.auxiliaryTopLeftArea,
-           let right = screen.auxiliaryTopRightArea {
-            return max(screen.frame.width - left.width - right.width, fallbackNotchWidth)
-        }
-
-        return fallbackNotchWidth
     }
 }

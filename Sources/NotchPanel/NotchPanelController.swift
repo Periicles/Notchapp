@@ -7,8 +7,8 @@ final class NotchPanelController: NSObject {
     private let progressModel: EventProgressModel
     private let preferences: Preferences
 
-    private let panel: NSPanel
-    private let sensorPanel: NSPanel
+    private let panel: NotchPanelWindow
+    private let sensorPanel: NotchPanelWindow
     private let hostingView: NSHostingView<NotchPanelView>
     private let settingsPopover = NSPopover()
     private var hideWorkItem: DispatchWorkItem?
@@ -23,14 +23,14 @@ final class NotchPanelController: NSObject {
         self.preferences = preferences
 
         let contentRect = ScreenHelper.panelRect()
-        panel = NSPanel(
+        panel = NotchPanelWindow(
             contentRect: contentRect,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
-        sensorPanel = NSPanel(
+        sensorPanel = NotchPanelWindow(
             contentRect: ScreenHelper.sensorRect(),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
@@ -50,8 +50,8 @@ final class NotchPanelController: NSObject {
         configureSensorPanel()
         installObservers()
         refreshLayout()
-        panel.orderOut(nil)
-        sensorPanel.orderOut(nil)
+        panel.orderFrontRegardless()
+        sensorPanel.orderFrontRegardless()
     }
 
     deinit {
@@ -59,18 +59,7 @@ final class NotchPanelController: NSObject {
     }
 
     private func configurePanel() {
-        panel.level = .statusBar
-        panel.collectionBehavior = [
-            .canJoinAllSpaces,
-            .stationary,
-            .fullScreenAuxiliary,
-        ]
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
         panel.ignoresMouseEvents = true
-        panel.hidesOnDeactivate = false
-        panel.isFloatingPanel = true
         panel.contentView = TrackingContainerView()
         panel.contentView?.wantsLayer = true
         panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
@@ -88,30 +77,17 @@ final class NotchPanelController: NSObject {
                 self?.show()
             }
             trackingView.onMouseExited = { [weak self] in
-                self?.hideWithDelay()
+                self?.hideIfOutsideOpenPanel()
             }
         }
     }
 
     private func configureSensorPanel() {
-        sensorPanel.level = .statusBar
-        sensorPanel.collectionBehavior = [
-            .canJoinAllSpaces,
-            .stationary,
-            .fullScreenAuxiliary,
-        ]
-        sensorPanel.isOpaque = false
-        sensorPanel.backgroundColor = .clear
-        sensorPanel.hasShadow = false
-        sensorPanel.hidesOnDeactivate = false
-
         let trackingView = TrackingContainerView()
         trackingView.onMouseEntered = { [weak self] in
             self?.show()
         }
-        trackingView.onMouseExited = { [weak self] in
-            self?.hideWithDelay()
-        }
+        trackingView.onMouseExited = nil
 
         sensorPanel.contentView = trackingView
         sensorPanel.orderFrontRegardless()
@@ -127,13 +103,8 @@ final class NotchPanelController: NSObject {
 
         progressModel.onEmptyStateChanged = { [weak self] isEmpty in
             guard let self else { return }
-            if isEmpty {
-                self.panel.orderOut(nil)
-                self.sensorPanel.orderOut(nil)
-            } else {
-                self.panel.orderFrontRegardless()
-                self.sensorPanel.orderFrontRegardless()
-            }
+            self.panel.orderFrontRegardless()
+            self.sensorPanel.orderFrontRegardless()
         }
     }
 
@@ -194,10 +165,19 @@ final class NotchPanelController: NSObject {
         progressModel.setHoverVisible(true)
     }
 
-    private func hideWithDelay() {
+    private func hideIfOutsideOpenPanel() {
+        guard progressModel.isHoverVisible else { return }
+
+        let mouseLocation = NSEvent.mouseLocation
+        let expandedRetainRect = panel.frame.insetBy(dx: -2, dy: -2)
+        guard !expandedRetainRect.contains(mouseLocation) else { return }
+
         hideWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            let mouseLocation = NSEvent.mouseLocation
+            guard !self.panel.frame.insetBy(dx: -2, dy: -2).contains(mouseLocation) else { return }
+
             self.progressModel.setHoverVisible(false)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
                 guard let self, !self.progressModel.isHoverVisible else { return }
@@ -205,6 +185,6 @@ final class NotchPanelController: NSObject {
             }
         }
         hideWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
     }
 }
