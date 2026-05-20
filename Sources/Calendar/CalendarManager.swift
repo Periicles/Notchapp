@@ -45,9 +45,10 @@ final class CalendarManager: ObservableObject {
         }
 
         let now = Date()
+        let endOfWindow = Calendar.current.startOfDay(for: now.addingTimeInterval(2 * 86400))
         let predicate = store.predicateForEvents(
             withStart: now.addingTimeInterval(-8 * 3600),
-            end: now.addingTimeInterval(2 * 3600),
+            end: endOfWindow,
             calendars: [calendar]
         )
 
@@ -64,47 +65,128 @@ final class CalendarManager: ObservableObject {
         return availableCalendars.first { $0.calendarIdentifier == identifier }
     }
 
-    func currentSnapshot(now: Date = .now) -> EventProgressSnapshot? {
-        if let currentEvent {
-            let total = currentEvent.endDate.timeIntervalSince(currentEvent.startDate)
-            let elapsed = now.timeIntervalSince(currentEvent.startDate)
-            let progress = min(max(elapsed / max(total, 1), 0), 1)
-            let elapsedSeconds = max(Int(elapsed), 0)
-            let remainingSeconds = max(Int(currentEvent.endDate.timeIntervalSince(now)), 0)
-            let tint = Color(nsColor: NSColor(cgColor: currentEvent.calendar.cgColor) ?? .controlAccentColor)
-
-            return EventProgressSnapshot(
-                title: currentEvent.title.nilIfEmpty ?? "Current Meeting",
-                progress: progress,
-                startTimeLabel: formattedTime(currentEvent.startDate),
-                endTimeLabel: formattedTime(currentEvent.endDate),
-                elapsedLabel: formatDuration(seconds: elapsedSeconds),
-                remainingLabel: formatDuration(seconds: remainingSeconds),
-                statusLabel: "In progress",
-                tint: tint,
-                state: .inProgress
+    func currentSnapshot(selectedCalendarID: String?, now: Date = .now) -> EventProgressSnapshot {
+        let inputs = ([currentEvent, nextEvent].compactMap { $0 }).map { event -> CalendarEvent in
+            CalendarEvent(
+                title: event.title ?? "",
+                startDate: event.startDate,
+                endDate: event.endDate,
+                calendarIdentifier: event.calendar.calendarIdentifier,
+                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor)
             )
         }
 
-        if let nextEvent {
-            let minutes = Int(nextEvent.startDate.timeIntervalSince(now) / 60)
-            if minutes >= 0 && minutes < 5 {
-                return EventProgressSnapshot(
-                    title: nextEvent.title.nilIfEmpty ?? "Upcoming Meeting",
-                    progress: 0,
-                    startTimeLabel: formattedTime(nextEvent.startDate),
-                    endTimeLabel: formattedTime(nextEvent.endDate),
-                    elapsedLabel: "",
-                    remainingLabel: formatDuration(seconds: max(Int(nextEvent.startDate.timeIntervalSince(now)), 0)),
-                    statusLabel: "Starts soon",
-                    tint: .accentColor,
-                    state: .startingSoon
-                )
-            }
+        return Self.computeSnapshot(
+            events: inputs,
+            selectedCalendarID: selectedCalendarID,
+            now: now,
+            calendar: .current
+        )
+    }
+
+    static func computeSnapshot(
+        events: [CalendarEvent],
+        selectedCalendarID: String?,
+        now: Date,
+        calendar: Calendar
+    ) -> EventProgressSnapshot {
+        guard let selectedCalendarID else {
+            return .noCalendar
         }
 
-        return nil
+        let relevant = events
+            .filter { $0.calendarIdentifier == selectedCalendarID }
+            .sorted { $0.startDate < $1.startDate }
+
+        if let current = relevant.first(where: { $0.startDate <= now && $0.endDate > now }) {
+            return inProgressSnapshot(for: current, now: now)
+        }
+
+        guard let next = relevant.first(where: { $0.startDate > now }) else {
+            return .emptyToday
+        }
+
+        let secondsUntilStart = next.startDate.timeIntervalSince(now)
+
+        if secondsUntilStart <= 5 * 60 {
+            return startingSoonSnapshot(for: next, now: now)
+        }
+
+        let endOfToday = calendar.startOfDay(for: now.addingTimeInterval(86400))
+        if next.startDate < endOfToday {
+            return upcomingTodaySnapshot(for: next, now: now)
+        }
+
+        return .emptyToday
     }
+
+    private static func inProgressSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
+        let total = event.endDate.timeIntervalSince(event.startDate)
+        let elapsed = now.timeIntervalSince(event.startDate)
+        let progress = min(max(elapsed / max(total, 1), 0), 1)
+        let elapsedSeconds = max(Int(elapsed), 0)
+        let remainingSeconds = max(Int(event.endDate.timeIntervalSince(now)), 0)
+
+        return EventProgressSnapshot(
+            title: event.title.nilIfEmpty ?? "Current Meeting",
+            progress: progress,
+            startTimeLabel: formattedTime(event.startDate),
+            endTimeLabel: formattedTime(event.endDate),
+            elapsedLabel: formatDuration(seconds: elapsedSeconds),
+            remainingLabel: formatDuration(seconds: remainingSeconds),
+            statusLabel: "In progress",
+            secondaryMessage: nil,
+            tint: event.color,
+            state: .inProgress
+        )
+    }
+
+    private static func startingSoonSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
+        let title = event.title.nilIfEmpty ?? "Upcoming Meeting"
+        let minutes = max(Int(event.startDate.timeIntervalSince(now) / 60), 0)
+        let message = minutes == 0
+            ? "Starts now — \(title)"
+            : "Starts in \(minutes)m — \(title)"
+
+        return EventProgressSnapshot(
+            title: title,
+            progress: 0,
+            startTimeLabel: formattedTime(event.startDate),
+            endTimeLabel: formattedTime(event.endDate),
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "Starts soon",
+            secondaryMessage: message,
+            tint: event.color,
+            state: .startingSoon
+        )
+    }
+
+    private static func upcomingTodaySnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
+        let title = event.title.nilIfEmpty ?? "Upcoming Meeting"
+        let interval = max(event.startDate.timeIntervalSince(now), 0)
+        let totalMinutes = Int(interval / 60)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+
+        let countdown = hours == 0
+            ? "\(minutes)min"
+            : "\(hours)h \(minutes)min"
+
+        return EventProgressSnapshot(
+            title: title,
+            progress: 0,
+            startTimeLabel: formattedTime(event.startDate),
+            endTimeLabel: formattedTime(event.endDate),
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "Upcoming today",
+            secondaryMessage: "Next: \(title) in \(countdown)",
+            tint: event.color,
+            state: .upcomingToday
+        )
+    }
+
     private func startPolling(preferences: Preferences) {
         refreshTask?.cancel()
         refreshTask = Task { [weak self] in
@@ -146,7 +228,7 @@ final class CalendarManager: ObservableObject {
         }
     }
 
-    private func formatDuration(seconds: Int) -> String {
+    private static func formatDuration(seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
         let seconds = seconds % 60
@@ -154,11 +236,19 @@ final class CalendarManager: ObservableObject {
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
-    private func formattedTime(_ date: Date) -> String {
+    private static func formattedTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
+}
+
+struct CalendarEvent: Equatable {
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let calendarIdentifier: String
+    let color: Color
 }
 
 private extension String {
