@@ -5,8 +5,9 @@ struct EventProgressSnapshot {
     enum State {
         case inProgress
         case startingSoon
-        case idle
-        case empty
+        case upcomingToday
+        case emptyToday
+        case noCalendar
     }
 
     let title: String
@@ -16,10 +17,11 @@ struct EventProgressSnapshot {
     let elapsedLabel: String
     let remainingLabel: String
     let statusLabel: String
+    let secondaryMessage: String?
     let tint: Color
     let state: State
 
-    static let empty = EventProgressSnapshot(
+    static let noCalendar = EventProgressSnapshot(
         title: "",
         progress: 0,
         startTimeLabel: "",
@@ -27,29 +29,29 @@ struct EventProgressSnapshot {
         elapsedLabel: "",
         remainingLabel: "",
         statusLabel: "",
-        tint: .clear,
-        state: .empty
+        secondaryMessage: "Pick a calendar in Settings",
+        tint: Color.secondary.opacity(0.35),
+        state: .noCalendar
     )
 
-    static let idle = EventProgressSnapshot(
-        title: "No meeting",
+    static let emptyToday = EventProgressSnapshot(
+        title: "",
         progress: 0,
         startTimeLabel: "",
         endTimeLabel: "",
         elapsedLabel: "",
         remainingLabel: "",
-        statusLabel: "Nothing in progress right now",
+        statusLabel: "",
+        secondaryMessage: "No event today",
         tint: Color.secondary.opacity(0.35),
-        state: .idle
+        state: .emptyToday
     )
 }
 
 @MainActor
 final class EventProgressModel: ObservableObject {
-    @Published private(set) var snapshot: EventProgressSnapshot = .empty
+    @Published private(set) var snapshot: EventProgressSnapshot = .noCalendar
     @Published private(set) var isHoverVisible = false
-
-    var onEmptyStateChanged: ((Bool) -> Void)?
 
     private var timerTask: Task<Void, Never>?
     private weak var calendarManager: CalendarManager?
@@ -77,25 +79,13 @@ final class EventProgressModel: ObservableObject {
     }
 
     func refreshSnapshot() {
-        let nextSnapshot = calendarManager?.currentSnapshot() ?? .empty
-        let shouldShowEmptyState = preferences?.showsNoMeetingState ?? false
-        let resolvedSnapshot: EventProgressSnapshot
-
-        if nextSnapshot.state == .empty && !shouldShowEmptyState {
-            resolvedSnapshot = .empty
-        } else if nextSnapshot.state == .empty && shouldShowEmptyState {
-            resolvedSnapshot = .idle
-        } else {
-            resolvedSnapshot = nextSnapshot
+        guard let calendarManager else {
+            snapshot = .noCalendar
+            return
         }
 
-        let wasEmpty = snapshot.state == .empty
-        let isEmpty = resolvedSnapshot.state == .empty
-
-        snapshot = resolvedSnapshot
-
-        if wasEmpty != isEmpty {
-            onEmptyStateChanged?(isEmpty)
-        }
+        snapshot = calendarManager.currentSnapshot(
+            selectedCalendarID: preferences?.selectedCalendarIdentifier
+        )
     }
 }

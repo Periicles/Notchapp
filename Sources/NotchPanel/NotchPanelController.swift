@@ -100,12 +100,6 @@ final class NotchPanelController: NSObject {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
-
-        progressModel.onEmptyStateChanged = { [weak self] isEmpty in
-            guard let self else { return }
-            self.panel.orderFrontRegardless()
-            self.sensorPanel.orderFrontRegardless()
-        }
     }
 
     @objc

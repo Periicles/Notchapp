@@ -5,8 +5,16 @@ Minimalist macOS menu bar app that uses the physical notch to show progress on t
 ## What it does
 
 - Picks one calendar from your Mac (radio-button selection in Settings).
-- When an event is in progress, hovering the notch reveals the event title, start/end times, an animated progress bar, and elapsed/remaining durations.
 - The notch stays solid black at rest — no information leaks until you hover.
+- On hover, the panel expands and shows one of five contextual states:
+
+| State | Trigger | Shown |
+|---|---|---|
+| **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining |
+| **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` |
+| **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
+| **Empty today** | Nothing scheduled until tomorrow | `No event today` |
+| **No calendar** | No calendar selected | `Pick a calendar in Settings` |
 
 ## Project layout
 

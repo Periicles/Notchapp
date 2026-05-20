@@ -32,9 +32,6 @@ struct SettingsView: View {
                 .frame(maxHeight: 220)
             }
 
-            Toggle("Show \"No meeting\" state", isOn: $preferences.showsNoMeetingState)
-                .toggleStyle(.switch)
-
             Toggle("Launch at login", isOn: $launchAtLoginEnabled)
                 .toggleStyle(.switch)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
@@ -47,9 +44,6 @@ struct SettingsView: View {
         .padding(14)
         .frame(width: 320)
         .onChange(of: preferences.selectedCalendarIdentifier) { _, _ in
-            onPreferencesChanged()
-        }
-        .onChange(of: preferences.showsNoMeetingState) { _, _ in
             onPreferencesChanged()
         }
     }

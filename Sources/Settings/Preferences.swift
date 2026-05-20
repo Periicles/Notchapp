@@ -6,8 +6,8 @@ import SwiftUI
 final class Preferences: ObservableObject {
     private enum Keys {
         static let selectedCalendarIdentifier = "selectedCalendarIdentifier"
-        static let showsNoMeetingState = "showsNoMeetingState"
         static let legacySelectedCalendarIDs = "selectedCalendarIDs"
+        static let legacyShowsNoMeetingState = "showsNoMeetingState"
     }
 
     @Published var selectedCalendarIdentifier: String? {
@@ -20,21 +20,15 @@ final class Preferences: ObservableObject {
         }
     }
 
-    @Published var showsNoMeetingState: Bool {
-        didSet {
-            defaults.set(showsNoMeetingState, forKey: Keys.showsNoMeetingState)
-        }
-    }
-
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
         Self.migrateLegacyMultiSelectIfNeeded(in: defaults)
+        defaults.removeObject(forKey: Keys.legacyShowsNoMeetingState)
 
         self.selectedCalendarIdentifier = defaults.string(forKey: Keys.selectedCalendarIdentifier)
-        self.showsNoMeetingState = defaults.object(forKey: Keys.showsNoMeetingState) as? Bool ?? false
     }
 
     func ensureDefaultSelection(using calendars: [EKCalendar], store: EKEventStore) {
