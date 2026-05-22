@@ -6,17 +6,17 @@ final class PreferencesTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suiteName: String!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUp() {
+        super.setUp()
         suiteName = "NotchBarTests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
     }
 
-    override func tearDown() async throws {
+    override func tearDown() {
         defaults.removePersistentDomain(forName: suiteName)
         defaults = nil
         suiteName = nil
-        try await super.tearDown()
+        super.tearDown()
     }
 
     // MARK: - pickDefaultIdentifier
