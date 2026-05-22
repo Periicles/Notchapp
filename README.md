@@ -1,6 +1,6 @@
 # NotchBar
 
-Minimalist macOS menu bar app that uses the physical notch to show progress on the current calendar event.
+Minimalist macOS app that uses the physical notch to show progress on the current calendar event.
 
 ## What it does
 
@@ -32,30 +32,93 @@ Supporting/
 └── NotchBar.entitlements          # Sandbox + calendars entitlement
 ```
 
-## Building
+## Architecture
 
-Requires macOS 14, Swift 6.1+, Xcode (for XCTest when running tests).
+NotchBar is intentionally simple — no external dependencies, no framework layers.
+
+**SPM-only (no `.xcodeproj`)**
+Swift Package Manager is the sole build system. This keeps builds fully reproducible and eliminates Xcode project file merge conflicts in team workflows.
+
+**`NSPanel` over `NSWindow`**
+The notch overlay is an `NSPanel` configured as `borderless` + `nonactivatingPanel`. This combination keeps the panel visible at the correct screen layer without stealing keyboard focus from the active app.
+
+**Five-state snapshot model**
+`EventProgressModel` holds an `EventProgressSnapshot` — an immutable value computed fresh each second. `CalendarManager` derives the snapshot from live EventKit data; the view renders whatever snapshot it receives. All conditional logic is isolated in `CalendarManager.computeSnapshot`, making each state independently testable without a running EventKit store.
+
+**Data flow**
+```
+EventKit → CalendarManager → EventProgressSnapshot → NotchPanelView
+```
+`CalendarManager` owns `EKEventStore` and publishes `currentEvent` / `nextEvent`. `EventProgressModel` drives a 1-second timer that calls `refreshSnapshot()`. `NotchPanelView` observes the model via `@ObservedObject` and re-renders on each tick.
+
+**`LSUIElement`**
+Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app switcher. NotchBar runs as a pure background UI layer with no Dock presence.
+
+## Getting Started
+
+**Prerequisites**
+
+- macOS 14 or later
+- [Xcode](https://developer.apple.com/xcode/) full install (required for XCTest and the Swift 6.1 toolchain)
+
+**Clone, build, and run**
 
 ```sh
+git clone https://github.com/Periicles/Notchapp.git
+cd Notchapp
 swift build
 swift run
 ```
 
-## Running tests
+On first launch, grant Calendar access when the system prompt appears (or later via **System Settings → Privacy & Security → Calendars**). Then hover over the physical notch and click the settings icon to choose a calendar.
 
-The test target depends on `XCTest`, which is shipped with full Xcode (not Command Line Tools). If `xcode-select -p` points at `/Library/Developer/CommandLineTools`, set `DEVELOPER_DIR` for the test invocation:
+## Development
+
+**Running tests**
+
+The test target depends on `XCTest`, which ships with full Xcode (not Command Line Tools). If `xcode-select -p` points at `/Library/Developer/CommandLineTools`, set `DEVELOPER_DIR` for the test invocation:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Or switch globally:
+**Linting**
+
+Install [SwiftLint](https://github.com/realm/SwiftLint) and run it from the project root:
 
 ```sh
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-swift test
+brew install swiftlint
+swiftlint
 ```
 
-## Permissions
+The CI pipeline runs `swiftlint` on every PR. Fix all errors before pushing.
 
-On first launch the app requests Calendar access via EventKit. Grant it in the prompt or later in `System Settings > Privacy & Security > Calendars`.
+## Contributing
+
+**Branch naming**
+
+| Prefix | Use for |
+|---|---|
+| `feature/<topic>` | New functionality |
+| `fix/<topic>` | Bug fixes |
+| `docs/<topic>` | Documentation-only changes |
+| `refactor/<topic>` | Code changes with no behavior change |
+
+**Commit style** — [Conventional Commits](https://www.conventionalcommits.org)
+
+```
+feat: add weekly agenda view
+fix: correct progress bar overflow at event boundary
+refactor: extract snapshot helpers into static methods
+test: cover upcomingToday state with same-day boundary
+docs: document five-state model in README
+```
+
+**Before opening a PR**
+
+1. `swift test` — all tests pass
+2. `swiftlint` — zero errors
+3. New non-trivial logic is covered by tests
+4. One concern per PR — avoid mixing features with refactors
+
+The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.

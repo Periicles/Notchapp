@@ -74,10 +74,10 @@ enum ScreenHelper {
     }
 
     private static func isBuiltInDisplay(screen: NSScreen) -> Bool {
-        guard let deviceDescription = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+        let key = NSDeviceDescriptionKey("NSScreenNumber")
+        guard let displayID = screen.deviceDescription[key] as? CGDirectDisplayID else {
             return false
         }
-
-        return CGDisplayIsBuiltin(deviceDescription) != 0
+        return CGDisplayIsBuiltin(displayID) != 0
     }
 }
