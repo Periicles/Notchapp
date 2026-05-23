@@ -73,7 +73,6 @@ private struct InProgressContent: View {
 
                 TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
             }
-            .padding(.trailing, 46)
 
             VStack(alignment: .leading, spacing: 12) {
                 AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint)
@@ -214,22 +213,6 @@ private struct NotchSurface: View {
             NotchShellShape(cornerRadius: isExpanded ? 34 : 24)
                 .strokeBorder(.white.opacity(isExpanded ? 0.07 : 0.04), lineWidth: 1)
 
-            if isExpanded {
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.08),
-                            .clear,
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 34)
-
-                    Spacer(minLength: 0)
-                }
-                .clipShape(NotchShellShape(cornerRadius: 34))
-            }
         }
         .drawingGroup()
     }
