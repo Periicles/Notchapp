@@ -81,7 +81,7 @@ final class NotchPanelController: NSObject {
 
         if let trackingView = panel.contentView as? TrackingContainerView {
             trackingView.onMouseEntered = { [weak self] in
-                self?.show()
+                self?.hideWorkItem?.cancel()
             }
             trackingView.onMouseExited = { [weak self] in
                 self?.hideIfOutsideOpenPanel()
