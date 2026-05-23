@@ -23,12 +23,13 @@ struct NotchPanelView: View {
                 .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
         }
         .overlay(alignment: .topTrailing) {
-            if isExpanded {
-                SettingsOrbButton(action: onSettingsTapped)
-                    .padding(.top, 18)
-                    .padding(.trailing, 20)
-                    .transition(.asymmetric(insertion: .scale(scale: 0.85).combined(with: .opacity), removal: .opacity))
-            }
+            SettingsOrbButton(action: onSettingsTapped)
+                .padding(.top, 18)
+                .padding(.trailing, 20)
+                .opacity(isExpanded ? 1 : 0)
+                .scaleEffect(isExpanded ? 1 : 0.85, anchor: .topTrailing)
+                .allowsHitTesting(isExpanded)
+                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
         }
         .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight, alignment: .top)
         .compositingGroup()
