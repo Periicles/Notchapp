@@ -128,9 +128,9 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.secondaryMessage, "Next: Coffee in 45min")
     }
 
-    // MARK: - .emptyToday
+    // MARK: - .upcomingTomorrow
 
-    func test_state_isEmptyToday_whenNextEventIsTomorrow() {
+    func test_state_isUpcomingTomorrow_whenNextEventIsTomorrow() {
         let now = noonToday()
         let tomorrowNoon = now.addingTimeInterval(86_400)
         let snapshot = CalendarManager.computeSnapshot(
@@ -145,9 +145,25 @@ final class SnapshotComputationTests: XCTestCase {
             calendar: calendar
         )
 
-        XCTAssertEqual(snapshot.state, .emptyToday)
-        XCTAssertEqual(snapshot.secondaryMessage, "No event today")
+        XCTAssertEqual(snapshot.state, .upcomingTomorrow)
     }
+
+    func test_upcomingTomorrow_countdownFormat() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        // 1 day, 2 hours, 30 minutes, 15 seconds from now
+        let offsetSeconds: TimeInterval = 86400 + 2 * 3600 + 30 * 60 + 15
+        let snapshot = CalendarManager.computeSnapshot(
+            events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
+            selectedCalendarID: calendarID,
+            now: now,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.state, .upcomingTomorrow)
+        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 01:02:30:15")
+    }
+
+    // MARK: - .emptyToday
 
     func test_state_isEmptyToday_whenAllEventsAreInThePast() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)

@@ -6,6 +6,7 @@ struct EventProgressSnapshot {
         case inProgress
         case startingSoon
         case upcomingToday
+        case upcomingTomorrow
         case emptyToday
         case noCalendar
     }
