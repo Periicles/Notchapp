@@ -23,6 +23,8 @@ final class NotchPanelController: NSObject {
         )
     }()
     private var hideWorkItem: DispatchWorkItem?
+    // nonisolated(unsafe): only written/read on MainActor; nonisolated to allow deinit cleanup
+    private nonisolated(unsafe) var closeMonitor: Any?
 
     init(
         calendarManager: CalendarManager,
@@ -69,6 +71,9 @@ final class NotchPanelController: NSObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        if let monitor = closeMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
     }
 
     private func configurePanel() {
@@ -163,6 +168,28 @@ final class NotchPanelController: NSObject {
         sensorPanel.ignoresMouseEvents = true
         panel.ignoresMouseEvents = false
         progressModel.setHoverVisible(true)
+        startCloseMonitor()
+    }
+
+    private func startCloseMonitor() {
+        guard closeMonitor == nil else { return }
+        closeMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                guard let self, self.progressModel.isHoverVisible else { return }
+                let loc = NSEvent.mouseLocation
+                if !self.panel.frame.insetBy(dx: -2, dy: -2).contains(loc) {
+                    self.hideIfOutsideOpenPanel()
+                }
+            }
+        }
+    }
+
+    private func stopCloseMonitor() {
+        if let monitor = closeMonitor {
+            NSEvent.removeMonitor(monitor)
+            closeMonitor = nil
+        }
     }
 
     private func hideIfOutsideOpenPanel() {
@@ -178,6 +205,7 @@ final class NotchPanelController: NSObject {
             self.panel.ignoresMouseEvents = true
             self.sensorPanel.ignoresMouseEvents = false
             (self.sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
+            self.stopCloseMonitor()
         }
         hideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
