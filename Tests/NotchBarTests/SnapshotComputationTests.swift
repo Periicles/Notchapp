@@ -150,8 +150,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_upcomingTomorrow_countdownFormat() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        // 1 day, 2 hours, 30 minutes, 15 seconds from now
-        let offsetSeconds: TimeInterval = 86400 + 2 * 3600 + 30 * 60 + 15
+        let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
         let snapshot = CalendarManager.computeSnapshot(
             events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
