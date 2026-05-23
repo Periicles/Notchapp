@@ -23,12 +23,13 @@ struct NotchPanelView: View {
                 .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
         }
         .overlay(alignment: .topTrailing) {
-            if isExpanded {
-                SettingsOrbButton(action: onSettingsTapped)
-                    .padding(.top, 18)
-                    .padding(.trailing, 20)
-                    .transition(.asymmetric(insertion: .scale(scale: 0.85).combined(with: .opacity), removal: .opacity))
-            }
+            SettingsOrbButton(action: onSettingsTapped)
+                .padding(.top, 18)
+                .padding(.trailing, 20)
+                .opacity(isExpanded ? 1 : 0)
+                .scaleEffect(isExpanded ? 1 : 0.85, anchor: .topTrailing)
+                .allowsHitTesting(isExpanded)
+                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
         }
         .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight, alignment: .top)
         .compositingGroup()
@@ -73,7 +74,6 @@ private struct InProgressContent: View {
 
                 TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
             }
-            .padding(.trailing, 46)
 
             VStack(alignment: .leading, spacing: 12) {
                 AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint)
@@ -214,22 +214,6 @@ private struct NotchSurface: View {
             NotchShellShape(cornerRadius: isExpanded ? 34 : 24)
                 .strokeBorder(.white.opacity(isExpanded ? 0.07 : 0.04), lineWidth: 1)
 
-            if isExpanded {
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.08),
-                            .clear,
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 34)
-
-                    Spacer(minLength: 0)
-                }
-                .clipShape(NotchShellShape(cornerRadius: 34))
-            }
         }
         .drawingGroup()
     }

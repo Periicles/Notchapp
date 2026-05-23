@@ -54,7 +54,7 @@ enum ScreenHelper {
 
         if let topLeftArea = screen.auxiliaryTopLeftArea,
            let topRightArea = screen.auxiliaryTopRightArea {
-            width = screen.frame.width - topLeftArea.width - topRightArea.width + 4
+            width = screen.frame.width - topLeftArea.width - topRightArea.width
         }
 
         if screen.safeAreaInsets.top > 0 {

@@ -23,6 +23,8 @@ final class NotchPanelController: NSObject {
         )
     }()
     private var hideWorkItem: DispatchWorkItem?
+    // nonisolated(unsafe): only written/read on MainActor; nonisolated to allow deinit cleanup
+    private nonisolated(unsafe) var closeMonitor: Any?
 
     init(
         calendarManager: CalendarManager,
@@ -69,6 +71,9 @@ final class NotchPanelController: NSObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        if let monitor = closeMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
     }
 
     private func configurePanel() {
@@ -81,7 +86,7 @@ final class NotchPanelController: NSObject {
 
         if let trackingView = panel.contentView as? TrackingContainerView {
             trackingView.onMouseEntered = { [weak self] in
-                self?.show()
+                self?.hideWorkItem?.cancel()
             }
             trackingView.onMouseExited = { [weak self] in
                 self?.hideIfOutsideOpenPanel()
@@ -160,16 +165,35 @@ final class NotchPanelController: NSObject {
 
     private func show() {
         hideWorkItem?.cancel()
+        sensorPanel.ignoresMouseEvents = true
         panel.ignoresMouseEvents = false
         progressModel.setHoverVisible(true)
+        startCloseMonitor()
+    }
+
+    private func startCloseMonitor() {
+        guard closeMonitor == nil else { return }
+        closeMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [weak self] in
+                guard let self, self.progressModel.isHoverVisible else { return }
+                let loc = NSEvent.mouseLocation
+                if !self.panel.frame.insetBy(dx: -2, dy: -2).contains(loc) {
+                    self.hideIfOutsideOpenPanel()
+                }
+            }
+        }
+    }
+
+    private func stopCloseMonitor() {
+        if let monitor = closeMonitor {
+            NSEvent.removeMonitor(monitor)
+            closeMonitor = nil
+        }
     }
 
     private func hideIfOutsideOpenPanel() {
         guard progressModel.isHoverVisible else { return }
-
-        let mouseLocation = NSEvent.mouseLocation
-        let expandedRetainRect = panel.frame.insetBy(dx: -2, dy: -2)
-        guard !expandedRetainRect.contains(mouseLocation) else { return }
 
         hideWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
@@ -178,10 +202,10 @@ final class NotchPanelController: NSObject {
             guard !self.panel.frame.insetBy(dx: -2, dy: -2).contains(mouseLocation) else { return }
 
             self.progressModel.setHoverVisible(false)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
-                guard let self, !self.progressModel.isHoverVisible else { return }
-                self.panel.ignoresMouseEvents = true
-            }
+            self.panel.ignoresMouseEvents = true
+            self.sensorPanel.ignoresMouseEvents = false
+            (self.sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
+            self.stopCloseMonitor()
         }
         hideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
