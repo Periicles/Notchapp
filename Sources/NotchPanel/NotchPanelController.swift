@@ -175,12 +175,9 @@ final class NotchPanelController: NSObject {
             guard !self.panel.frame.insetBy(dx: -2, dy: -2).contains(mouseLocation) else { return }
 
             self.progressModel.setHoverVisible(false)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { [weak self] in
-                guard let self, !self.progressModel.isHoverVisible else { return }
-                self.panel.ignoresMouseEvents = true
-                self.sensorPanel.ignoresMouseEvents = false
-                (self.sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
-            }
+            self.panel.ignoresMouseEvents = true
+            self.sensorPanel.ignoresMouseEvents = false
+            (self.sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
         }
         hideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
