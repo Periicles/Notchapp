@@ -6,14 +6,15 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 
 - Picks one calendar from your Mac (radio-button selection in Settings).
 - The notch stays solid black at rest — no information leaks until you hover.
-- On hover, the panel expands and shows one of five contextual states:
+- On hover, the panel expands and shows one of six contextual states:
 
 | State | Trigger | Shown |
 |---|---|---|
 | **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining |
 | **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` |
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
-| **Empty today** | Nothing scheduled until tomorrow | `No event today` |
+| **Upcoming tomorrow** | Next event is tomorrow or later | `Next event in: DD:HH:MM:SS` (live countdown) |
+| **Empty today** | No events found | `No event today` |
 | **No calendar** | No calendar selected | `Pick a calendar in Settings` |
 
 ## Project layout
@@ -42,7 +43,7 @@ Swift Package Manager is the sole build system. This keeps builds fully reproduc
 **`NSPanel` over `NSWindow`**
 The notch overlay is an `NSPanel` configured as `borderless` + `nonactivatingPanel`. This combination keeps the panel visible at the correct screen layer without stealing keyboard focus from the active app.
 
-**Five-state snapshot model**
+**Six-state snapshot model**
 `EventProgressModel` holds an `EventProgressSnapshot` — an immutable value computed fresh each second. `CalendarManager` derives the snapshot from live EventKit data; the view renders whatever snapshot it receives. All conditional logic is isolated in `CalendarManager.computeSnapshot`, making each state independently testable without a running EventKit store.
 
 **Data flow**

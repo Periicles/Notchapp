@@ -117,7 +117,31 @@ final class CalendarManager: ObservableObject {
             return upcomingTodaySnapshot(for: next, now: now)
         }
 
-        return .emptyToday
+        return upcomingTomorrowSnapshot(for: next, now: now)
+    }
+
+    private static func upcomingTomorrowSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
+        let interval = max(event.startDate.timeIntervalSince(now), 0)
+        let totalSeconds = Int(interval)
+        let days = totalSeconds / 86400
+        let hours = (totalSeconds % 86400) / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        let countdown = String(format: "%02d:%02d:%02d:%02d", days, hours, minutes, seconds)
+
+        return EventProgressSnapshot(
+            title: event.title.nilIfEmpty ?? "Upcoming Meeting",
+            progress: 0,
+            startTimeLabel: formattedTime(event.startDate),
+            endTimeLabel: formattedTime(event.endDate),
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "Upcoming tomorrow",
+            secondaryMessage: "Next event in: \(countdown)",
+            tint: event.color,
+            state: .upcomingTomorrow
+        )
     }
 
     private static func inProgressSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
