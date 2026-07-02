@@ -209,6 +209,40 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertLessThan(snapshot.progress, 1.0)
     }
 
+    // MARK: - Equatable (guards redundant @Published invalidations)
+
+    func test_snapshot_isEqual_forIdenticalInputsAtSameInstant() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let events = [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)]
+
+        let first = CalendarManager.computeSnapshot(
+            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        )
+        let second = CalendarManager.computeSnapshot(
+            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        )
+
+        XCTAssertEqual(first, second)
+    }
+
+    func test_snapshot_isNotEqual_whenElapsedTimeAdvances() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let events = [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)]
+
+        let earlier = CalendarManager.computeSnapshot(
+            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        )
+        let later = CalendarManager.computeSnapshot(
+            events: events, selectedCalendarID: calendarID, now: now.addingTimeInterval(1), calendar: calendar
+        )
+
+        XCTAssertNotEqual(earlier, later)
+    }
+
+    func test_snapshot_isNotEqual_acrossDifferentStates() {
+        XCTAssertNotEqual(EventProgressSnapshot.noCalendar, EventProgressSnapshot.emptyToday)
+    }
+
     // MARK: - Helpers
 
     private func noonToday() -> Date {
