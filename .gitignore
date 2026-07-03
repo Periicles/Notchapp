@@ -60,4 +60,6 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
-docs/
+docs/*
+# ...but keep hand-written specs/design docs.
+!docs/superpowers/
