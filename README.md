@@ -44,13 +44,16 @@ Swift Package Manager is the sole build system. This keeps builds fully reproduc
 The notch overlay is an `NSPanel` configured as `borderless` + `nonactivatingPanel`. This combination keeps the panel visible at the correct screen layer without stealing keyboard focus from the active app.
 
 **Six-state snapshot model**
-`EventProgressModel` holds an `EventProgressSnapshot` — an immutable value computed fresh each second. `CalendarManager` derives the snapshot from live EventKit data; the view renders whatever snapshot it receives. All conditional logic is isolated in `CalendarManager.computeSnapshot`, making each state independently testable without a running EventKit store.
+`EventProgressModel` holds an `EventProgressSnapshot` — an immutable, `Equatable` value derived from live EventKit data. `CalendarManager` computes the snapshot; the view renders whatever snapshot it receives. All conditional logic is isolated in `CalendarManager.computeSnapshot`, making each state independently testable without a running EventKit store.
 
 **Data flow**
 ```
 EventKit → CalendarManager → EventProgressSnapshot → NotchPanelView
 ```
-`CalendarManager` owns `EKEventStore` and publishes `currentEvent` / `nextEvent`. `EventProgressModel` drives a 1-second timer that calls `refreshSnapshot()`. `NotchPanelView` observes the model via `@ObservedObject` and re-renders on each tick.
+`CalendarManager` owns `EKEventStore`, publishes `currentEvent` / `nextEvent`, and polls every 30s (plus reacts to `EKEventStoreChanged`). `NotchPanelView` observes `EventProgressModel` via `@ObservedObject`.
+
+**Idle-first performance**
+At rest the notch shows nothing from the snapshot, so NotchBar does no live work while collapsed: the 1-second refresh tick and the 60fps progress-bar shimmer both run **only while the panel is open** (hover). Snapshots are `Equatable`, so redundant recomputes never trigger a SwiftUI invalidation. Result: ~0% CPU when collapsed, even during an in-progress event.
 
 **`LSUIElement`**
 Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app switcher. NotchBar runs as a pure background UI layer with no Dock presence.

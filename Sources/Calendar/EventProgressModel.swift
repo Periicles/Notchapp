@@ -1,8 +1,8 @@
 import Foundation
 import SwiftUI
 
-struct EventProgressSnapshot {
-    enum State {
+struct EventProgressSnapshot: Equatable {
+    enum State: Equatable {
         case inProgress
         case startingSoon
         case upcomingToday
@@ -65,8 +65,43 @@ final class EventProgressModel: ObservableObject {
     func bind(to calendarManager: CalendarManager, preferences: Preferences) {
         self.calendarManager = calendarManager
         self.preferences = preferences
-        timerTask?.cancel()
         refreshSnapshot()
+    }
+
+    /// The live 1s tick only runs while the panel is open. At rest the notch shows
+    /// nothing from the snapshot, so recomputing it every second is wasted work.
+    func setHoverVisible(_ visible: Bool) {
+        guard visible != isHoverVisible else { return }
+        isHoverVisible = visible
+
+        if visible {
+            refreshSnapshot()
+            startTicking()
+        } else {
+            stopTicking()
+        }
+    }
+
+    func refreshSnapshot() {
+        guard let calendarManager else {
+            updateSnapshot(.noCalendar)
+            return
+        }
+
+        updateSnapshot(
+            calendarManager.currentSnapshot(
+                selectedCalendarID: preferences?.selectedCalendarIdentifier
+            )
+        )
+    }
+
+    private func updateSnapshot(_ newSnapshot: EventProgressSnapshot) {
+        guard newSnapshot != snapshot else { return }
+        snapshot = newSnapshot
+    }
+
+    private func startTicking() {
+        timerTask?.cancel()
         timerTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
@@ -75,18 +110,8 @@ final class EventProgressModel: ObservableObject {
         }
     }
 
-    func setHoverVisible(_ visible: Bool) {
-        isHoverVisible = visible
-    }
-
-    func refreshSnapshot() {
-        guard let calendarManager else {
-            snapshot = .noCalendar
-            return
-        }
-
-        snapshot = calendarManager.currentSnapshot(
-            selectedCalendarID: preferences?.selectedCalendarIdentifier
-        )
+    private func stopTicking() {
+        timerTask?.cancel()
+        timerTask = nil
     }
 }

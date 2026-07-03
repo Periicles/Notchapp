@@ -46,7 +46,7 @@ struct NotchContentView: View {
         Group {
             switch snapshot.state {
             case .inProgress:
-                InProgressContent(snapshot: snapshot)
+                InProgressContent(snapshot: snapshot, isVisible: progressModel.isHoverVisible)
             case .startingSoon, .upcomingToday, .upcomingTomorrow, .emptyToday, .noCalendar:
                 SecondaryContent(message: snapshot.secondaryMessage ?? "")
             }
@@ -61,6 +61,7 @@ struct NotchContentView: View {
 
 private struct InProgressContent: View {
     let snapshot: EventProgressSnapshot
+    let isVisible: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -76,7 +77,7 @@ private struct InProgressContent: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint)
+                AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint, isAnimating: isVisible)
                 .frame(maxWidth: .infinity)
                 .frame(height: 13)
 
@@ -113,9 +114,10 @@ private struct SecondaryContent: View {
 private struct AnimatedProgressBar: View {
     let progress: Double
     let tint: Color
+    let isAnimating: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 60)) { timeline in
+        TimelineView(.animation(minimumInterval: 1 / 60, paused: !isAnimating)) { timeline in
             GeometryReader { geo in
                 let width = geo.size.width
                 let fillWidth = max(16, width * progress)
