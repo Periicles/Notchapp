@@ -63,3 +63,6 @@ fastlane/test_output
 docs/*
 # ...but keep hand-written specs/design docs.
 !docs/superpowers/
+
+# Packaged distribution artifacts
+dist/
