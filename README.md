@@ -62,9 +62,10 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 1. Grab it from the [NotchBar website](https://periicles.github.io/Notchapp/), or download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
 2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
-3. **First launch:** right-click (or Control-click) NotchBar in Applications and choose **Open**, then confirm **Open** in the dialog that appears.
+3. Open NotchBar. The first time, macOS blocks it because the app isn't notarized yet.
+4. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**, then confirm.
 
-> **Why the extra step?** NotchBar isn't notarized by Apple yet, so macOS asks you to confirm the very first launch. It's a one-time step — after that, NotchBar opens normally. (Notarization is on the roadmap.)
+> **Why the extra step?** macOS blocks it only because NotchBar isn't notarized by Apple yet — it's safe, just unsigned. You do this once; afterwards it opens with a normal double-click. (Notarization is on the roadmap.)
 
 On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose a calendar.
 
@@ -136,3 +137,7 @@ docs: document five-state model in README
 4. One concern per PR — avoid mixing features with refactors
 
 The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.
+
+## License
+
+NotchBar is released under the [MIT License](LICENSE).
