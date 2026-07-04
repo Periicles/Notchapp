@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotchBar — are we done yet?</title>
+  <meta name="description" data-i18n-attr="content:og.desc"
+        content="Turn your MacBook's notch into a live countdown for whatever you're stuck in.">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NotchBar — are we done yet?">
+  <meta property="og:description" content="Turn your MacBook's notch into a live countdown for whatever you're stuck in.">
+  <meta property="og:image" content="https://periicles.github.io/Notchapp/assets/og-image.png">
+  <meta property="og:url" content="https://periicles.github.io/Notchapp/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site">
+    <a class="wordmark" href="./">NotchBar</a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" class="lang-btn" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" class="lang-btn" data-lang="fr" aria-pressed="false">FR</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <h1 data-i18n="hero.title">are we done yet?</h1>
+        <p class="sub" data-i18n="hero.sub">Your notch answers that now. Live event progress, right where you're already staring.</p>
+        <a class="btn" href="https://github.com/Periicles/Notchapp/releases" data-i18n="cta.download">Download for Mac</a>
+        <p class="meta" data-i18n="meta.reqs">macOS 14+ · Apple Silicon · free</p>
+      </div>
+      <div class="hero-stage">
+        <div class="desktop">
+          <div class="menubar"><span class="clock">10:27</span><span class="mi"></span></div>
+          <div class="notchwrap">
+            <div class="nb">
+              <div class="nb-row1">
+                <span class="nb-title" data-i18n="mock.title">Organic Chemistry</span>
+                <span class="nb-left" data-i18n-html="mock.left"><b>23 min</b> left</span>
+              </div>
+              <div class="nb-track"><div class="nb-fill"></div></div>
+            </div>
+          </div>
+          <div class="desktop-pad"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2 data-i18n="feat.heading">What it does</h2>
+      <div class="cards">
+        <article>
+          <h3 data-i18n="feat.1.t">Live progress</h3>
+          <p data-i18n="feat.1.d">See how far along your current event is, at a glance.</p>
+        </article>
+        <article>
+          <h3 data-i18n="feat.2.t">Invisible at rest</h3>
+          <p data-i18n="feat.2.d">The notch stays black until you hover. No clutter, no menu-bar icon.</p>
+        </article>
+        <article>
+          <h3 data-i18n="feat.3.t">Barely there</h3>
+          <p data-i18n="feat.3.d">~0% CPU while collapsed. Your battery won't notice it's running.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="install">
+      <h2 data-i18n="install.heading">Install</h2>
+      <ol>
+        <li data-i18n="install.1">Download NotchBar.dmg and open it.</li>
+        <li data-i18n="install.2">Drag NotchBar into your Applications folder.</li>
+        <li data-i18n="install.3">Right-click NotchBar → Open, then confirm Open.</li>
+      </ol>
+      <p class="note" data-i18n="install.note">The right-click is a one-time step while NotchBar isn't notarized by Apple yet. After that, it opens normally.</p>
+      <a class="btn" href="https://github.com/Periicles/Notchapp/releases" data-i18n="cta.download">Download for Mac</a>
+    </section>
+  </main>
+
+  <footer class="site">
+    <a href="https://github.com/Periicles/Notchapp" data-i18n="footer.source">Source on GitHub</a>
+    <span data-i18n="footer.made">Made by Periicles</span>
+    <span class="reqs" data-i18n="meta.reqs">macOS 14+ · Apple Silicon · free</span>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

@@ -60,9 +60,7 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
-docs/*
-# ...but keep hand-written specs/design docs.
-!docs/superpowers/
+# (docs/ is tracked: it holds specs, plans, and the GitHub Pages site)
 
 # Packaged distribution artifacts
 dist/
