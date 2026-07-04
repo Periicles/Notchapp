@@ -60,7 +60,7 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 ## Installation
 
-1. Download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
+1. Grab it from the [NotchBar website](https://periicles.github.io/Notchapp/), or download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
 2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
 3. **First launch:** right-click (or Control-click) NotchBar in Applications and choose **Open**, then confirm **Open** in the dialog that appears.
 
