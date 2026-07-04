@@ -69,6 +69,14 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose a calendar.
 
+## Uninstall
+
+1. If you turned on **Launch at login**, hover the notch → open settings → toggle it **off** first (this removes the login item cleanly). You can also remove it later under **System Settings → General → Login Items**.
+2. Quit NotchBar. It runs without a Dock or menu-bar icon, so quit it from **Activity Monitor** (search "NotchBar", select it, press the stop button) — or simply log out.
+3. Drag **NotchBar** from **Applications** to the Trash.
+4. *Optional — remove leftover settings:* delete `~/Library/Containers/com.periicles.NotchBar/`.
+5. *Optional — revoke Calendar access:* **System Settings → Privacy & Security → Calendars**.
+
 ## Getting Started
 
 **Prerequisites**
