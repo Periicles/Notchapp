@@ -9,6 +9,10 @@ jobs:
   lint:
     name: Lint
     runs-on: macos-15
+    env:
+      # Runners preinstall untrusted taps (e.g. aws/tap); skip the trust
+      # prompt so brew doesn't emit a tap-trust warning annotation.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
     steps:
       - uses: actions/checkout@v5
       - name: Install SwiftLint
