@@ -1,3 +1,4 @@
+import AppKit
 import EventKit
 import ServiceManagement
 import SwiftUI
@@ -40,6 +41,19 @@ struct SettingsView: View {
                 .onAppear {
                     launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
                 }
+
+            Divider()
+                .padding(.top, 2)
+
+            HStack {
+                Spacer()
+                Button("Quit NotchBar") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            }
         }
         .padding(14)
         .frame(width: 320)
