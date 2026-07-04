@@ -58,6 +58,16 @@ At rest the notch shows nothing from the snapshot, so NotchBar does no live work
 **`LSUIElement`**
 Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app switcher. NotchBar runs as a pure background UI layer with no Dock presence.
 
+## Installation
+
+1. Download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
+2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
+3. **First launch:** right-click (or Control-click) NotchBar in Applications and choose **Open**, then confirm **Open** in the dialog that appears.
+
+> **Why the extra step?** NotchBar isn't notarized by Apple yet, so macOS asks you to confirm the very first launch. It's a one-time step — after that, NotchBar opens normally. (Notarization is on the roadmap.)
+
+On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose a calendar.
+
 ## Getting Started
 
 **Prerequisites**
