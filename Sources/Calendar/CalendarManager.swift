@@ -46,7 +46,7 @@ final class CalendarManager: ObservableObject {
         }
 
         let now = Date()
-        let endOfWindow = Calendar.current.startOfDay(for: now.addingTimeInterval(2 * 86400))
+        let endOfWindow = now.addingTimeInterval(7 * 86400)
         let predicate = store.predicateForEvents(
             withStart: now.addingTimeInterval(-8 * 3600),
             end: endOfWindow,
@@ -118,10 +118,10 @@ final class CalendarManager: ObservableObject {
             return upcomingTodaySnapshot(for: next, now: now)
         }
 
-        return upcomingTomorrowSnapshot(for: next, now: now)
+        return upcomingLaterSnapshot(for: next, now: now)
     }
 
-    private static func upcomingTomorrowSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
+    private static func upcomingLaterSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
         let interval = max(event.startDate.timeIntervalSince(now), 0)
         let totalSeconds = Int(interval)
         let days = totalSeconds / 86400
@@ -138,10 +138,10 @@ final class CalendarManager: ObservableObject {
             endTimeLabel: formattedTime(event.endDate),
             elapsedLabel: "",
             remainingLabel: "",
-            statusLabel: "Upcoming tomorrow",
+            statusLabel: "Upcoming",
             secondaryMessage: "Next event in: \(countdown)",
             tint: event.color,
-            state: .upcomingTomorrow
+            state: .upcomingLater
         )
     }
 

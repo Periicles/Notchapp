@@ -47,7 +47,7 @@ struct NotchContentView: View {
             switch snapshot.state {
             case .inProgress:
                 InProgressContent(snapshot: snapshot, isVisible: progressModel.isHoverVisible)
-            case .startingSoon, .upcomingToday, .upcomingTomorrow, .emptyToday, .noCalendar:
+            case .startingSoon, .upcomingToday, .upcomingLater, .emptyToday, .noCalendar:
                 SecondaryContent(message: snapshot.secondaryMessage ?? "")
             }
         }

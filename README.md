@@ -13,7 +13,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 | **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining |
 | **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` |
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
-| **Upcoming tomorrow** | Next event is tomorrow or later | `Next event in: DD:HH:MM:SS` (live countdown) |
+| **Upcoming** | Next event is beyond today (up to 7 days out) | `Next event in: DD:HH:MM:SS` (live countdown) |
 | **Empty today** | No events found | `No event today` |
 | **No calendar** | No calendar selected | `Pick a calendar in Settings` |
 

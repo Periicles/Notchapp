@@ -103,7 +103,7 @@ final class SnapshotComputationTests: XCTestCase {
     // MARK: - .upcomingToday
 
     func test_state_isUpcomingToday_whenEventLaterTodayBeyondFiveMinutes() {
-        let now = noonToday()
+        let now = fixedNoon()
         let snapshot = CalendarManager.computeSnapshot(
             events: [makeEvent(title: "Algo", startOffset: 2 * 3600 + 14 * 60, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
@@ -116,7 +116,7 @@ final class SnapshotComputationTests: XCTestCase {
     }
 
     func test_upcomingToday_minutesOnly_whenUnderOneHour() {
-        let now = noonToday()
+        let now = fixedNoon()
         let snapshot = CalendarManager.computeSnapshot(
             events: [makeEvent(title: "Coffee", startOffset: 45 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
@@ -128,27 +128,58 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.secondaryMessage, "Next: Coffee in 45min")
     }
 
-    // MARK: - .upcomingTomorrow
+    // MARK: - .upcomingLater
 
-    func test_state_isUpcomingTomorrow_whenNextEventIsTomorrow() {
-        let now = noonToday()
-        let tomorrowNoon = now.addingTimeInterval(86_400)
+    func test_state_isUpcomingLater_whenNextEventIsTomorrow() {
+        let now = fixedNoon()
         let snapshot = CalendarManager.computeSnapshot(
-            events: [makeEvent(
-                title: "Tomorrow",
-                startOffset: tomorrowNoon.timeIntervalSince(now),
-                durationSeconds: 3600,
-                relativeTo: now
-            )],
+            events: [makeEvent(title: "Tomorrow", startOffset: 86_400, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
             calendar: calendar
         )
-
-        XCTAssertEqual(snapshot.state, .upcomingTomorrow)
+        XCTAssertEqual(snapshot.state, .upcomingLater)
+        XCTAssertEqual(snapshot.statusLabel, "Upcoming")
     }
 
-    func test_upcomingTomorrow_countdownFormat() {
+    func test_state_isUpcomingLater_whenNextEventInThreeDays() {
+        let now = fixedNoon()
+        let snapshot = CalendarManager.computeSnapshot(
+            events: [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)],
+            selectedCalendarID: calendarID,
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.state, .upcomingLater)
+        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 03:00:00:00")
+    }
+
+    func test_boundary_eventBeforeMidnight_isUpcomingToday() {
+        let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
+                                to: calendar.startOfDay(for: fixedNoon()))!
+        let snapshot = CalendarManager.computeSnapshot(
+            events: [makeEvent(title: "Late", startOffset: 20 * 60, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarID: calendarID,
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+    }
+
+    func test_boundary_eventAfterMidnight_isUpcomingLater() {
+        let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
+                                to: calendar.startOfDay(for: fixedNoon()))!
+        let snapshot = CalendarManager.computeSnapshot(
+            events: [makeEvent(title: "Early", startOffset: 40 * 60, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarID: calendarID,
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.state, .upcomingLater)
+        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 00:00:40:00")
+    }
+
+    func test_upcomingLater_countdownFormat() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
         let snapshot = CalendarManager.computeSnapshot(
@@ -158,7 +189,7 @@ final class SnapshotComputationTests: XCTestCase {
             calendar: calendar
         )
 
-        XCTAssertEqual(snapshot.state, .upcomingTomorrow)
+        XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 01:02:30:15")
     }
 
@@ -245,11 +276,10 @@ final class SnapshotComputationTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func noonToday() -> Date {
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 12
-        components.minute = 0
-        components.second = 0
-        return calendar.date(from: components)!
+    /// Noon of a fixed reference day — never depends on when the test runs.
+    private func fixedNoon() -> Date {
+        let reference = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let startOfDay = calendar.startOfDay(for: reference)
+        return calendar.date(byAdding: DateComponents(hour: 12), to: startOfDay)!
     }
 }
