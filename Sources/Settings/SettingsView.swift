@@ -108,6 +108,7 @@ struct SettingsView: View {
             }
         } catch {
             launchAtLoginEnabled.toggle()
+            Log.preferences.error("Launch-at-login toggle failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

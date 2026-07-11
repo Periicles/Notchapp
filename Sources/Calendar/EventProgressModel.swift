@@ -73,6 +73,7 @@ final class EventProgressModel: ObservableObject {
     func setHoverVisible(_ visible: Bool) {
         guard visible != isHoverVisible else { return }
         isHoverVisible = visible
+        Log.panel.debug("Panel \(visible ? "opened" : "closed", privacy: .public)")
 
         if visible {
             recoverAuthorizationIfNeeded()
