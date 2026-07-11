@@ -64,3 +64,9 @@ fastlane/test_output
 
 # Packaged distribution artifacts
 dist/
+
+# Internal AI-workflow artifacts — never commit (Claude / superpowers)
+docs/superpowers/
+docs/audit-*.md
+.superpowers/
+.claude/
