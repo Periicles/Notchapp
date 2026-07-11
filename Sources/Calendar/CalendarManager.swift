@@ -32,6 +32,7 @@ final class CalendarManager: ObservableObject {
         // A store-change notification during the await may have already run recovery.
         guard authorizationState != .granted else { return }
         authorizationState = requested
+        Log.calendar.info("Bootstrap authorization: \(String(describing: self.authorizationState), privacy: .public)")
         guard authorizationState == .granted else { return }
 
         availableCalendars = store.calendars(for: .event)
@@ -45,6 +46,7 @@ final class CalendarManager: ObservableObject {
         let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
         guard latest != authorizationState else { return }
         authorizationState = latest
+        Log.calendar.info("Authorization changed: \(String(describing: latest), privacy: .public)")
         guard latest == .granted else { return }
         availableCalendars = store.calendars(for: .event)
         preferences.ensureDefaultSelection(using: availableCalendars, store: store)
@@ -53,11 +55,15 @@ final class CalendarManager: ObservableObject {
     }
 
     func refreshEvents(using preferences: Preferences) async {
-        guard authorizationState == .granted else { return }
+        guard authorizationState == .granted else {
+            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
+            return
+        }
 
         guard let calendar = selectedCalendar(using: preferences) else {
             currentEvent = nil
             nextEvent = nil
+            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
             return
         }
 
@@ -75,6 +81,7 @@ final class CalendarManager: ObservableObject {
 
         currentEvent = events.first(where: { $0.startDate <= now && $0.endDate > now })
         nextEvent = events.first(where: { $0.startDate > now })
+        Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
     }
 
     func selectedCalendar(using preferences: Preferences) -> EKCalendar? {
@@ -230,6 +237,7 @@ final class CalendarManager: ObservableObject {
 
     private func startPolling(preferences: Preferences) {
         refreshTask?.cancel()
+        Log.calendar.info("Polling started")
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
@@ -289,6 +297,7 @@ final class CalendarManager: ObservableObject {
             let granted = try await store.requestFullAccessToEvents()
             return granted ? .granted : .denied
         } catch {
+            Log.calendar.error("Full-access request failed: \(error.localizedDescription, privacy: .public)")
             return .denied
         }
     }

@@ -17,6 +17,7 @@ final class Preferences: ObservableObject {
             } else {
                 defaults.removeObject(forKey: Keys.selectedCalendarIdentifier)
             }
+            Log.preferences.debug("Selected calendar changed")
         }
     }
 
@@ -73,5 +74,6 @@ final class Preferences: ObservableObject {
             defaults.set(firstID, forKey: Keys.selectedCalendarIdentifier)
         }
         defaults.removeObject(forKey: Keys.legacySelectedCalendarIDs)
+        Log.preferences.info("Migrated legacy multi-select preference")
     }
 }
