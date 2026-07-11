@@ -70,3 +70,4 @@ docs/superpowers/
 docs/audit-*.md
 .superpowers/
 .claude/
+.vscode/

@@ -20,5 +20,9 @@
     <true/>
     <key>NSCalendarsUsageDescription</key>
     <string>NotchBar shows your meeting progress.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>NotchBar shows your meeting progress.</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
 </dict>
 </plist>

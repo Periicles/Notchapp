@@ -19,6 +19,13 @@ struct SettingsView: View {
                 Text("Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            } else if calendarManager.authorizationState == .insufficient {
+                Text(
+                    "NotchBar has write-only calendar access and cannot read your events. "
+                    + "Switch it to Full Access in System Settings > Privacy & Security > Calendars."
+                )
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             } else {
                 Text("Tracked Calendar")
                     .font(.subheadline.weight(.semibold))
