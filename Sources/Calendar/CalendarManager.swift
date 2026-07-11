@@ -28,7 +28,10 @@ final class CalendarManager: ObservableObject {
     func bootstrap(using preferences: Preferences) async {
         installStoreObserver(preferences: preferences)
 
-        authorizationState = await requestAccessIfNeeded()
+        let requested = await requestAccessIfNeeded()
+        // A store-change notification during the await may have already run recovery.
+        guard authorizationState != .granted else { return }
+        authorizationState = requested
         guard authorizationState == .granted else { return }
 
         availableCalendars = store.calendars(for: .event)
