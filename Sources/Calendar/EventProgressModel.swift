@@ -6,7 +6,7 @@ struct EventProgressSnapshot: Equatable {
         case inProgress
         case startingSoon
         case upcomingToday
-        case upcomingTomorrow
+        case upcomingLater
         case emptyToday
         case noCalendar
     }
