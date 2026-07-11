@@ -8,6 +8,7 @@ final class CalendarManager: ObservableObject {
     enum AuthorizationState: Equatable {
         case unknown
         case granted
+        case insufficient   // write-only access: cannot read events
         case denied
     }
 
@@ -234,20 +235,30 @@ final class CalendarManager: ObservableObject {
         }
     }
 
-    private func requestAccessIfNeeded() async -> AuthorizationState {
-        switch EKEventStore.authorizationStatus(for: .event) {
-        case .fullAccess, .writeOnly:
+    static func mapAuthorizationStatus(_ status: EKAuthorizationStatus) -> AuthorizationState {
+        switch status {
+        case .fullAccess:
             return .granted
+        case .writeOnly:
+            return .insufficient
         case .denied, .restricted:
             return .denied
         case .notDetermined:
-            do {
-                let granted = try await store.requestFullAccessToEvents()
-                return granted ? .granted : .denied
-            } catch {
-                return .denied
-            }
+            return .unknown
         @unknown default:
+            return .denied
+        }
+    }
+
+    private func requestAccessIfNeeded() async -> AuthorizationState {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        guard status == .notDetermined else {
+            return Self.mapAuthorizationStatus(status)
+        }
+        do {
+            let granted = try await store.requestFullAccessToEvents()
+            return granted ? .granted : .denied
+        } catch {
             return .denied
         }
     }
