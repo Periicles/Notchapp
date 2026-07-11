@@ -26,12 +26,25 @@ final class CalendarManager: ObservableObject {
     }
 
     func bootstrap(using preferences: Preferences) async {
+        installStoreObserver(preferences: preferences)
+
         authorizationState = await requestAccessIfNeeded()
         guard authorizationState == .granted else { return }
 
         availableCalendars = store.calendars(for: .event)
         preferences.ensureDefaultSelection(using: availableCalendars, store: store)
-        installStoreObserver(preferences: preferences)
+        await refreshEvents(using: preferences)
+        startPolling(preferences: preferences)
+    }
+
+    func reevaluateAuthorizationIfNeeded(using preferences: Preferences) async {
+        guard authorizationState != .granted else { return }
+        let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
+        guard latest != authorizationState else { return }
+        authorizationState = latest
+        guard latest == .granted else { return }
+        availableCalendars = store.calendars(for: .event)
+        preferences.ensureDefaultSelection(using: availableCalendars, store: store)
         await refreshEvents(using: preferences)
         startPolling(preferences: preferences)
     }
@@ -223,15 +236,29 @@ final class CalendarManager: ObservableObject {
         }
     }
 
+    private func handleStoreChanged(using preferences: Preferences) async {
+        await reevaluateAuthorizationIfNeeded(using: preferences)
+        guard authorizationState == .granted else { return }
+        availableCalendars = store.calendars(for: .event)
+        let availableIDs = availableCalendars.map(\.calendarIdentifier)
+        let resolved = Preferences.resolveSelection(
+            current: preferences.selectedCalendarIdentifier,
+            available: availableIDs
+        )
+        if resolved == nil {
+            preferences.selectedCalendarIdentifier = nil
+            preferences.ensureDefaultSelection(using: availableCalendars, store: store)
+        }
+        await refreshEvents(using: preferences)
+    }
+
     private func installStoreObserver(preferences: Preferences) {
         NotificationCenter.default.addObserver(
             forName: .EKEventStoreChanged,
             object: store,
             queue: .main
         ) { [weak self] _ in
-            Task {
-                await self?.refreshEvents(using: preferences)
-            }
+            Task { await self?.handleStoreChanged(using: preferences) }
         }
     }
 

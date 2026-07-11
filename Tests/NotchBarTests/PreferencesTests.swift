@@ -135,4 +135,18 @@ final class PreferencesTests: XCTestCase {
 
         XCTAssertNil(defaults.object(forKey: "selectedCalendarIdentifier"))
     }
+
+    // MARK: - resolveSelection
+
+    func test_resolveSelection_keepsCurrent_whenStillAvailable() {
+        XCTAssertEqual(Preferences.resolveSelection(current: "b", available: ["a", "b"]), "b")
+    }
+
+    func test_resolveSelection_returnsNil_whenCurrentRemoved() {
+        XCTAssertNil(Preferences.resolveSelection(current: "gone", available: ["a", "b"]))
+    }
+
+    func test_resolveSelection_returnsNil_whenCurrentNil() {
+        XCTAssertNil(Preferences.resolveSelection(current: nil, available: ["a"]))
+    }
 }

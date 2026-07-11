@@ -58,6 +58,11 @@ final class Preferences: ObservableObject {
         return nonSubscriptionAlphabetical.first
     }
 
+    static func resolveSelection(current: String?, available: [String]) -> String? {
+        guard let current, available.contains(current) else { return nil }
+        return current
+    }
+
     static func migrateLegacyMultiSelectIfNeeded(in defaults: UserDefaults) {
         guard defaults.object(forKey: Keys.selectedCalendarIdentifier) == nil,
               let legacy = defaults.stringArray(forKey: Keys.legacySelectedCalendarIDs) else {

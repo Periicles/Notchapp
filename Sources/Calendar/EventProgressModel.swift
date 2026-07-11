@@ -75,6 +75,7 @@ final class EventProgressModel: ObservableObject {
         isHoverVisible = visible
 
         if visible {
+            recoverAuthorizationIfNeeded()
             refreshSnapshot()
             startTicking()
         } else {
@@ -98,6 +99,16 @@ final class EventProgressModel: ObservableObject {
     private func updateSnapshot(_ newSnapshot: EventProgressSnapshot) {
         guard newSnapshot != snapshot else { return }
         snapshot = newSnapshot
+    }
+
+    /// Cheap: exits immediately unless access is currently not granted.
+    private func recoverAuthorizationIfNeeded() {
+        guard let calendarManager, let preferences,
+              calendarManager.authorizationState != .granted else { return }
+        Task { [weak self] in
+            await calendarManager.reevaluateAuthorizationIfNeeded(using: preferences)
+            self?.refreshSnapshot()
+        }
     }
 
     private func startTicking() {

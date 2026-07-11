@@ -50,7 +50,7 @@ The notch overlay is an `NSPanel` configured as `borderless` + `nonactivatingPan
 ```
 EventKit → CalendarManager → EventProgressSnapshot → NotchPanelView
 ```
-`CalendarManager` owns `EKEventStore`, publishes `currentEvent` / `nextEvent`, and polls every 30s (plus reacts to `EKEventStoreChanged`). `NotchPanelView` observes `EventProgressModel` via `@ObservedObject`.
+`CalendarManager` owns `EKEventStore`, publishes `currentEvent` / `nextEvent`, and polls every 30s (plus reacts to `EKEventStoreChanged`). If Calendar access is granted after launch — e.g. from System Settings, without restarting NotchBar — the store-changed notification and each panel open re-check authorization and pick up the change automatically. `NotchPanelView` observes `EventProgressModel` via `@ObservedObject`.
 
 **Idle-first performance**
 At rest the notch shows nothing from the snapshot, so NotchBar does no live work while collapsed: the 1-second refresh tick and the 60fps progress-bar shimmer both run **only while the panel is open** (hover). Snapshots are `Equatable`, so redundant recomputes never trigger a SwiftUI invalidation. Result: ~0% CPU when collapsed, even during an in-progress event.
