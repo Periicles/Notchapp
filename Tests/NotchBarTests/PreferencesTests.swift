@@ -73,80 +73,95 @@ final class PreferencesTests: XCTestCase {
 
     // MARK: - Legacy migration
 
-    func test_migration_picksFirstFromLegacyArray() {
-        defaults.set(["legacy-a", "legacy-b", "legacy-c"], forKey: "selectedCalendarIDs")
+    func test_migration_singleIdentifierBecomesSet() {
+        defaults.set("solo-id", forKey: "selectedCalendarIdentifier")
 
         let prefs = Preferences(defaults: defaults)
 
-        XCTAssertEqual(prefs.selectedCalendarIdentifier, "legacy-a")
-        XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, ["solo-id"])
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIdentifier"))
     }
 
-    func test_migration_emptyLegacyArrayClearsKey() {
-        defaults.set([String](), forKey: "selectedCalendarIDs")
+    func test_migration_legacyArrayBecomesFullSet() {
+        defaults.set(["legacy-a", "legacy-b"], forKey: "selectedCalendarIDs")
 
         let prefs = Preferences(defaults: defaults)
 
-        XCTAssertNil(prefs.selectedCalendarIdentifier)
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, ["legacy-a", "legacy-b"])
         XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
     }
 
     func test_migration_doesNotOverwriteExistingSelection() {
-        defaults.set("existing-id", forKey: "selectedCalendarIdentifier")
+        defaults.set(["existing-id"], forKey: "selectedCalendarIdentifiers")
+        defaults.set("legacy-solo", forKey: "selectedCalendarIdentifier")
         defaults.set(["legacy-a"], forKey: "selectedCalendarIDs")
 
         let prefs = Preferences(defaults: defaults)
 
-        XCTAssertEqual(prefs.selectedCalendarIdentifier, "existing-id")
-        XCTAssertEqual(defaults.stringArray(forKey: "selectedCalendarIDs"), ["legacy-a"])
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, ["existing-id"])
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIdentifier"))
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
     }
 
     // MARK: - Init from defaults
 
     func test_init_loadsExistingSelection() {
-        defaults.set("stored-id", forKey: "selectedCalendarIdentifier")
+        defaults.set(["stored-a", "stored-b"], forKey: "selectedCalendarIdentifiers")
 
         let prefs = Preferences(defaults: defaults)
 
-        XCTAssertEqual(prefs.selectedCalendarIdentifier, "stored-id")
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, ["stored-a", "stored-b"])
+        XCTAssertTrue(prefs.hasStoredSelection)
     }
 
-    func test_init_noSelectionStored_leavesIdentifierNil() {
+    func test_init_noSelectionStored_isEmptyAndNotMarkedStored() {
         let prefs = Preferences(defaults: defaults)
 
-        XCTAssertNil(prefs.selectedCalendarIdentifier)
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, [])
+        XCTAssertFalse(prefs.hasStoredSelection)
     }
 
     // MARK: - Persistence
 
-    func test_setSelectedCalendarIdentifier_persistsToDefaults() {
+    func test_setSelectedCalendarIdentifiers_persistsToDefaults() {
         let prefs = Preferences(defaults: defaults)
 
-        prefs.selectedCalendarIdentifier = "new-id"
+        prefs.selectedCalendarIdentifiers = ["b", "a"]
 
-        XCTAssertEqual(defaults.string(forKey: "selectedCalendarIdentifier"), "new-id")
+        XCTAssertEqual(defaults.stringArray(forKey: "selectedCalendarIdentifiers"), ["a", "b"])
     }
 
-    func test_clearingSelectedCalendarIdentifier_removesFromDefaults() {
-        defaults.set("initial-id", forKey: "selectedCalendarIdentifier")
+    func test_emptySelection_isPersistedAndNotReseeded() {
         let prefs = Preferences(defaults: defaults)
+        prefs.selectedCalendarIdentifiers = ["a"]
+        prefs.selectedCalendarIdentifiers = []
 
-        prefs.selectedCalendarIdentifier = nil
+        let reloaded = Preferences(defaults: defaults)
 
-        XCTAssertNil(defaults.object(forKey: "selectedCalendarIdentifier"))
+        XCTAssertEqual(reloaded.selectedCalendarIdentifiers, [])
+        XCTAssertTrue(reloaded.hasStoredSelection)
     }
 
     // MARK: - resolveSelection
 
     func test_resolveSelection_keepsCurrent_whenStillAvailable() {
-        XCTAssertEqual(Preferences.resolveSelection(current: "b", available: ["a", "b"]), "b")
+        XCTAssertEqual(
+            Preferences.resolveSelection(current: ["b"], available: ["a", "b"]),
+            ["b"]
+        )
     }
 
-    func test_resolveSelection_returnsNil_whenCurrentRemoved() {
-        XCTAssertNil(Preferences.resolveSelection(current: "gone", available: ["a", "b"]))
+    func test_resolveSelection_dropsRemovedIdentifiers() {
+        XCTAssertEqual(
+            Preferences.resolveSelection(current: ["a", "gone"], available: ["a", "b"]),
+            ["a"]
+        )
     }
 
-    func test_resolveSelection_returnsNil_whenCurrentNil() {
-        XCTAssertNil(Preferences.resolveSelection(current: nil, available: ["a"]))
+    func test_resolveSelection_returnsEmptySet_whenNoneAvailable() {
+        XCTAssertEqual(
+            Preferences.resolveSelection(current: ["gone"], available: ["a", "b"]),
+            []
+        )
     }
 }

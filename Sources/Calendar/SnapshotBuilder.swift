@@ -4,16 +4,14 @@ import SwiftUI
 enum SnapshotBuilder {
     static func computeSnapshot(
         events: [CalendarEvent],
-        selectedCalendarID: String?,
+        selectedCalendarIDs: Set<String>,
         now: Date,
         calendar: Calendar
     ) -> EventProgressSnapshot {
-        guard let selectedCalendarID else {
-            return .noCalendar
-        }
+        guard !selectedCalendarIDs.isEmpty else { return .noCalendar }
 
         let relevant = events
-            .filter { $0.calendarIdentifier == selectedCalendarID }
+            .filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
             .sorted { $0.startDate < $1.startDate }
 
         if let current = relevant.first(where: { $0.startDate <= now && $0.endDate > now }) {

@@ -27,7 +27,7 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Tracked Calendar")
+                Text("Tracked Calendars")
                     .font(.subheadline.weight(.semibold))
 
                 ScrollView {
@@ -64,22 +64,20 @@ struct SettingsView: View {
         }
         .padding(14)
         .frame(width: 320)
-        .onChange(of: preferences.selectedCalendarIdentifier) { _, _ in
+        .onChange(of: preferences.selectedCalendarIdentifiers) { _, _ in
             onPreferencesChanged()
         }
     }
 
     private func calendarRow(for calendar: EKCalendar) -> some View {
-        let isSelected = preferences.selectedCalendarIdentifier == calendar.calendarIdentifier
+        let isSelected = preferences.selectedCalendarIdentifiers.contains(calendar.calendarIdentifier)
         let dotColor = Color(nsColor: NSColor(cgColor: calendar.cgColor) ?? .controlAccentColor)
 
         return Button {
-            if !isSelected {
-                preferences.selectedCalendarIdentifier = calendar.calendarIdentifier
-            }
+            preferences.selectedCalendarIdentifiers.formSymmetricDifference([calendar.calendarIdentifier])
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .font(.system(size: 14))
 

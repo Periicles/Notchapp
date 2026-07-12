@@ -93,7 +93,7 @@ final class EventProgressModel: ObservableObject {
 
         updateSnapshot(
             calendarManager.currentSnapshot(
-                selectedCalendarID: preferences?.selectedCalendarIdentifier
+                selectedCalendarIDs: preferences?.selectedCalendarIdentifiers ?? []
             )
         )
     }
