@@ -69,9 +69,11 @@ final class Preferences: ObservableObject {
         if defaults.object(forKey: Keys.selectedCalendarIdentifiers) == nil {
             if let single = defaults.string(forKey: Keys.legacySingleIdentifier) {
                 defaults.set([single], forKey: Keys.selectedCalendarIdentifiers)
+                Log.preferences.info("Migrated single calendar selection to multi-select")
             } else if let legacyArray = defaults.stringArray(forKey: Keys.legacySelectedCalendarIDs),
                       !legacyArray.isEmpty {
                 defaults.set(legacyArray, forKey: Keys.selectedCalendarIdentifiers)
+                Log.preferences.info("Migrated legacy multi-select selection (\(legacyArray.count) calendars)")
             }
         }
         defaults.removeObject(forKey: Keys.legacySingleIdentifier)

@@ -91,6 +91,27 @@ final class PreferencesTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
     }
 
+    func test_migration_singleWinsOverLegacyArray_whenNewKeyAbsent() {
+        defaults.set("single-id", forKey: "selectedCalendarIdentifier")
+        defaults.set(["legacy-a", "legacy-b"], forKey: "selectedCalendarIDs")
+
+        let prefs = Preferences(defaults: defaults)
+
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, ["single-id"])
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIdentifier"))
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
+    }
+
+    func test_migration_emptyLegacyArray_leavesSelectionUnstored() {
+        defaults.set([String](), forKey: "selectedCalendarIDs")
+
+        let prefs = Preferences(defaults: defaults)
+
+        XCTAssertEqual(prefs.selectedCalendarIdentifiers, [])
+        XCTAssertFalse(prefs.hasStoredSelection)
+        XCTAssertNil(defaults.object(forKey: "selectedCalendarIDs"))
+    }
+
     func test_migration_doesNotOverwriteExistingSelection() {
         defaults.set(["existing-id"], forKey: "selectedCalendarIdentifiers")
         defaults.set("legacy-solo", forKey: "selectedCalendarIdentifier")
