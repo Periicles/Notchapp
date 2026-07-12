@@ -23,36 +23,40 @@ struct EventProgressSnapshot: Equatable {
     let state: State
     var joinURL: URL?
 
-    static let noCalendar = EventProgressSnapshot(
-        title: "",
-        progress: 0,
-        startTimeLabel: "",
-        endTimeLabel: "",
-        elapsedLabel: "",
-        remainingLabel: "",
-        statusLabel: "",
-        secondaryMessage: "Pick a calendar in Settings",
-        tint: Color.secondary.opacity(0.35),
-        state: .noCalendar
-    )
+    static func noCalendar(locale: Locale = .current) -> EventProgressSnapshot {
+        EventProgressSnapshot(
+            title: "",
+            progress: 0,
+            startTimeLabel: "",
+            endTimeLabel: "",
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "",
+            secondaryMessage: Localized.string("Pick a calendar in Settings", locale: locale),
+            tint: Color.secondary.opacity(0.35),
+            state: .noCalendar
+        )
+    }
 
-    static let emptyToday = EventProgressSnapshot(
-        title: "",
-        progress: 0,
-        startTimeLabel: "",
-        endTimeLabel: "",
-        elapsedLabel: "",
-        remainingLabel: "",
-        statusLabel: "",
-        secondaryMessage: "No event today",
-        tint: Color.secondary.opacity(0.35),
-        state: .emptyToday
-    )
+    static func emptyToday(locale: Locale = .current) -> EventProgressSnapshot {
+        EventProgressSnapshot(
+            title: "",
+            progress: 0,
+            startTimeLabel: "",
+            endTimeLabel: "",
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "",
+            secondaryMessage: Localized.string("No event today", locale: locale),
+            tint: Color.secondary.opacity(0.35),
+            state: .emptyToday
+        )
+    }
 }
 
 @MainActor
 final class EventProgressModel: ObservableObject {
-    @Published private(set) var snapshot: EventProgressSnapshot = .noCalendar
+    @Published private(set) var snapshot: EventProgressSnapshot = .noCalendar()
     @Published private(set) var isHoverVisible = false
 
     private var timerTask: Task<Void, Never>?
@@ -87,7 +91,7 @@ final class EventProgressModel: ObservableObject {
 
     func refreshSnapshot() {
         guard let calendarManager else {
-            updateSnapshot(.noCalendar)
+            updateSnapshot(.noCalendar())
             return
         }
 

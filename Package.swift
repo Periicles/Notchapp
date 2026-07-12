@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "NotchBar",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -15,12 +16,19 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "NotchBar",
-            path: "Sources"
+            path: "Sources",
+            resources: [.process("Resources")],
+            plugins: ["CompileStringCatalogPlugin"]
         ),
         .testTarget(
             name: "NotchBarTests",
             dependencies: ["NotchBar"],
             path: "Tests/NotchBarTests"
+        ),
+        .plugin(
+            name: "CompileStringCatalogPlugin",
+            capability: .buildTool(),
+            path: "Plugins/CompileStringCatalogPlugin"
         ),
     ]
 )

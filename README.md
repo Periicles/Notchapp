@@ -5,6 +5,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 ## What it does
 
 - Pick one or more calendars (checkboxes in Settings).
+- English and French, following the system language.
 - The notch stays solid black at rest — no information leaks until you hover.
 - On hover, the panel expands and shows one of six contextual states, computed across the events of every tracked calendar:
 
@@ -25,7 +26,10 @@ Sources/
 ├── NotchPanel/                    # NSPanel windows, hover tracking, SwiftUI rendering
 ├── Calendar/                      # EventKit access + event snapshot model
 ├── Settings/                      # UserDefaults-backed preferences + settings UI
-└── Utilities/ScreenHelper.swift   # Physical notch geometry
+├── Utilities/                     # ScreenHelper (notch geometry) + Localized helper
+└── Resources/Localizable.xcstrings # String Catalog (en source, fr translations)
+Plugins/
+└── CompileStringCatalogPlugin/    # Build tool plugin: compiles the String Catalog for `swift build`/`swift test`
 Tests/
 └── NotchBarTests/                 # XCTest target (@testable import NotchBar)
 Supporting/

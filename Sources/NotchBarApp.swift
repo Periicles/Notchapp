@@ -15,14 +15,18 @@ struct NotchBarApp: App {
                 }
             )
             Divider()
-            Button("Refresh Events") {
+            Button {
                 Task {
                     await appDelegate.calendarManager.refreshEvents(using: appDelegate.preferences)
                     appDelegate.progressModel.refreshSnapshot()
                 }
+            } label: {
+                Text("Refresh Events", bundle: .module)
             }
-            Button("Quit") {
+            Button {
                 NSApp.terminate(nil)
+            } label: {
+                Text("Quit", bundle: .module)
             }
         }
         .menuBarExtraStyle(.window)
