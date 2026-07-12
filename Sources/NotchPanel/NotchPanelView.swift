@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct NotchPanelView: View {
@@ -30,6 +31,18 @@ struct NotchPanelView: View {
                 .scaleEffect(isExpanded ? 1 : 0.85, anchor: .topTrailing)
                 .allowsHitTesting(isExpanded)
                 .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
+        }
+        .overlay(alignment: .bottom) {
+            if let joinURL = progressModel.snapshot.joinURL {
+                JoinButton(tint: progressModel.snapshot.tint) {
+                    NSWorkspace.shared.open(joinURL)
+                }
+                .padding(.bottom, 16)
+                .opacity(isExpanded ? 1 : 0)
+                .scaleEffect(isExpanded ? 1 : 0.85, anchor: .bottom)
+                .allowsHitTesting(isExpanded)
+                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
+            }
         }
         .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight, alignment: .top)
         .compositingGroup()
@@ -279,6 +292,28 @@ private struct SettingsOrbButton: View {
                     Circle()
                         .strokeBorder(.white.opacity(0.08), lineWidth: 1)
                 )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct JoinButton: View {
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "video.fill")
+                    .font(.system(size: 12, weight: .bold))
+                Text("Join")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(tint.opacity(0.35)))
+            .overlay(Capsule().strokeBorder(tint.opacity(0.55), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

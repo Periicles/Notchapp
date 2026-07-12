@@ -79,7 +79,8 @@ enum SnapshotBuilder {
             statusLabel: "In progress",
             secondaryMessage: nil,
             tint: event.color,
-            state: .inProgress
+            state: .inProgress,
+            joinURL: event.joinURL
         )
     }
 
@@ -100,7 +101,8 @@ enum SnapshotBuilder {
             statusLabel: "Starts soon",
             secondaryMessage: message,
             tint: event.color,
-            state: .startingSoon
+            state: .startingSoon,
+            joinURL: event.joinURL
         )
     }
 
@@ -148,6 +150,7 @@ struct CalendarEvent: Equatable {
     let endDate: Date
     let calendarIdentifier: String
     let color: Color
+    var joinURL: URL?
 }
 
 private extension String {
