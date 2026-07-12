@@ -1,14 +1,25 @@
 import Foundation
 
-/// `String(localized:bundle:locale:)` does not reliably honor an explicit `locale`
-/// override when given a plain `Bundle` value — it silently falls back to
-/// `Locale.current` instead. Routing through `LocalizedStringResource` with a
-/// `.atURL` bundle description resolves correctly regardless of the system locale.
-/// This is what lets tests pin the `en` catalog deterministically and lets snapshot
-/// building honor a caller-supplied locale rather than always following the host
-/// machine's language.
+/// Resolves localized strings from the `.lproj` bundles that SwiftPM compiles
+/// natively from `Sources/Resources/{en,fr}.lproj/Localizable.strings`. When
+/// `locale` is the system's current locale, resolution is left entirely to
+/// `Bundle.module`'s standard search order (which honors a per-app language
+/// override). For an explicit non-current locale — as used by tests and by
+/// snapshot building when a caller-supplied locale is needed — the matching
+/// `.lproj` sub-bundle is looked up directly so resolution doesn't depend on
+/// the host machine's language.
 enum Localized {
-    static func string(_ value: String.LocalizationValue, locale: Locale) -> String {
-        String(localized: LocalizedStringResource(value, locale: locale, bundle: .atURL(Bundle.module.bundleURL)))
+    static func string(_ keyAndValue: String.LocalizationValue, locale: Locale = .current) -> String {
+        String(localized: keyAndValue, bundle: bundle(for: locale))
+    }
+
+    private static func bundle(for locale: Locale) -> Bundle {
+        guard locale != .current else { return .module }
+        let language = locale.language.languageCode?.identifier ?? "en"
+        guard let path = Bundle.module.path(forResource: language, ofType: "lproj"),
+              let lprojBundle = Bundle(path: path) else {
+            return .module
+        }
+        return lprojBundle
     }
 }

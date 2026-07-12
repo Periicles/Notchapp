@@ -27,9 +27,7 @@ Sources/
 ├── Calendar/                      # EventKit access + event snapshot model
 ├── Settings/                      # UserDefaults-backed preferences + settings UI
 ├── Utilities/                     # ScreenHelper (notch geometry) + Localized helper
-└── Resources/Localizable.xcstrings # String Catalog (en source, fr translations)
-Plugins/
-└── CompileStringCatalogPlugin/    # Build tool plugin: compiles the String Catalog for `swift build`/`swift test`
+└── Resources/                     # en.lproj/ + fr.lproj/ Localizable.strings, processed natively by SwiftPM
 Tests/
 └── NotchBarTests/                 # XCTest target (@testable import NotchBar)
 Supporting/

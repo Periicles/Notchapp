@@ -17,18 +17,12 @@ let package = Package(
         .executableTarget(
             name: "NotchBar",
             path: "Sources",
-            resources: [.process("Resources")],
-            plugins: ["CompileStringCatalogPlugin"]
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "NotchBarTests",
             dependencies: ["NotchBar"],
             path: "Tests/NotchBarTests"
-        ),
-        .plugin(
-            name: "CompileStringCatalogPlugin",
-            capability: .buildTool(),
-            path: "Plugins/CompileStringCatalogPlugin"
         ),
     ]
 )
