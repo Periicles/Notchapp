@@ -5,6 +5,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 ## What it does
 
 - Pick one or more calendars (checkboxes in Settings).
+- If a tracked calendar is deleted or unshared, NotchBar won't auto-pick a replacement — reselect one in Settings.
 - English and French, following the system language.
 - The notch stays solid black at rest — no information leaks until you hover.
 - On hover, the panel expands and shows one of six contextual states, computed across the events of every tracked calendar:
