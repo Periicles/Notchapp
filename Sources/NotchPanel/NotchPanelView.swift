@@ -9,11 +9,16 @@ struct NotchPanelView: View {
         let isExpanded = progressModel.isHoverVisible
 
         ZStack(alignment: .top) {
+            // Invisible at rest: on a notched Mac the physical notch already shows
+            // through, and with nothing drawn there is no overlay layer for the
+            // interactive Space-switch gesture to slide along with the desktop.
+            // The surface fades/grows in only while the panel is open.
             NotchSurface(isExpanded: isExpanded)
                 .frame(
                     width: isExpanded ? ScreenHelper.panelWidth : ScreenHelper.collapsedWidth(),
                     height: isExpanded ? ScreenHelper.openNotchSize.height : ScreenHelper.closedHeight()
                 )
+                .opacity(isExpanded ? 1 : 0)
 
             NotchContentView(progressModel: progressModel)
                 .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
