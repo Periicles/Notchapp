@@ -357,6 +357,19 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertNotEqual(EventProgressSnapshot.noCalendar(), EventProgressSnapshot.emptyToday())
     }
 
+    // MARK: - .accessRevoked
+
+    func test_accessRevoked_hasAccessMessageAndState() {
+        let snapshot = EventProgressSnapshot.accessRevoked(locale: Locale(identifier: "en"))
+
+        XCTAssertEqual(snapshot.state, .accessRevoked)
+        XCTAssertEqual(snapshot.secondaryMessage, "Calendar access is off — re-enable in Settings")
+    }
+
+    func test_accessRevoked_isDistinctFromNoCalendar() {
+        XCTAssertNotEqual(EventProgressSnapshot.accessRevoked(), EventProgressSnapshot.noCalendar())
+    }
+
     // MARK: - Helpers
 
     /// Noon of a fixed reference day — never depends on when the test runs.
