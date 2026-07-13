@@ -191,13 +191,27 @@ final class NotchPanelController: NSObject {
 
     private func startCloseMonitor() {
         guard closeMonitor == nil else { return }
-        closeMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+        closeMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .leftMouseDown, .rightMouseDown]
+        ) { [weak self] event in
             guard let self else { return }
             Task { @MainActor [weak self] in
                 guard let self, self.progressModel.isHoverVisible else { return }
-                let loc = NSEvent.mouseLocation
-                if !self.panel.frame.insetBy(dx: -2, dy: -2).contains(loc) {
-                    self.hideIfOutsideOpenPanel()
+
+                switch event.type {
+                case .leftMouseDown, .rightMouseDown:
+                    // A global monitor only receives events destined for *other* apps,
+                    // so any click it sees is off the notch — however far away. Dismiss
+                    // the menu (don't rely on the transient popover doing it across apps)
+                    // and collapse the notch, deterministically.
+                    if self.settingsPopover.isShown {
+                        self.settingsPopover.performClose(nil)
+                    }
+                    self.collapsePanel()
+                default:
+                    if !self.cursorIsOverPanel() {
+                        self.hideIfOutsideOpenPanel()
+                    }
                 }
             }
         }
