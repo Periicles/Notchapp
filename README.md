@@ -8,7 +8,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - If a tracked calendar is deleted or unshared, NotchBar won't auto-pick a replacement — reselect one in Settings.
 - English and French, following the system language.
 - The notch stays solid black at rest — no information leaks until you hover.
-- On hover, the panel expands and shows one of six contextual states, computed across the events of every tracked calendar:
+- On hover, the panel expands and shows one of seven contextual states, computed across the events of every tracked calendar:
 
 | State | Trigger | Shown |
 |---|---|---|
@@ -18,6 +18,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next event in: DD:HH:MM:SS` (live countdown) |
 | **Empty today** | No events found | `No event today` |
 | **No calendar** | No calendars selected | `Pick a calendar in Settings` |
+| **Access off** | Calendar access denied or revoked | `Calendar access is off — re-enable in Settings` |
 
 ## Project layout
 

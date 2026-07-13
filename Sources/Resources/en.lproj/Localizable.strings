@@ -1,6 +1,7 @@
 "%lldh %lldmin" = "%lldh %lldmin";
 "%lldmin" = "%lldmin";
 "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars." = "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.";
+"Calendar access is off — re-enable in Settings" = "Calendar access is off — re-enable in Settings";
 "Current Meeting" = "Current Meeting";
 "Elapsed" = "Elapsed";
 "In progress" = "In progress";

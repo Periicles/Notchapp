@@ -9,6 +9,7 @@ struct EventProgressSnapshot: Equatable {
         case upcomingLater
         case emptyToday
         case noCalendar
+        case accessRevoked
     }
 
     let title: String
@@ -52,6 +53,21 @@ struct EventProgressSnapshot: Equatable {
             state: .emptyToday
         )
     }
+
+    static func accessRevoked(locale: Locale = .current) -> EventProgressSnapshot {
+        EventProgressSnapshot(
+            title: "",
+            progress: 0,
+            startTimeLabel: "",
+            endTimeLabel: "",
+            elapsedLabel: "",
+            remainingLabel: "",
+            statusLabel: "",
+            secondaryMessage: Localized.string("Calendar access is off — re-enable in Settings", locale: locale),
+            tint: Color.secondary.opacity(0.35),
+            state: .accessRevoked
+        )
+    }
 }
 
 @MainActor
@@ -81,7 +97,7 @@ final class EventProgressModel: ObservableObject {
         Log.panel.debug("Panel \(visible ? "opened" : "closed", privacy: .public)")
 
         if visible {
-            recoverAuthorizationIfNeeded()
+            reconcileAuthorization()
             refreshSnapshot()
             startTicking()
         } else {
@@ -95,11 +111,16 @@ final class EventProgressModel: ObservableObject {
             return
         }
 
-        updateSnapshot(
-            calendarManager.currentSnapshot(
-                selectedCalendarIDs: preferences?.selectedCalendarIdentifiers ?? []
+        switch calendarManager.authorizationState {
+        case .denied, .insufficient:
+            updateSnapshot(.accessRevoked())
+        case .unknown, .granted:
+            updateSnapshot(
+                calendarManager.currentSnapshot(
+                    selectedCalendarIDs: preferences?.selectedCalendarIdentifiers ?? []
+                )
             )
-        )
+        }
     }
 
     private func updateSnapshot(_ newSnapshot: EventProgressSnapshot) {
@@ -107,10 +128,12 @@ final class EventProgressModel: ObservableObject {
         snapshot = newSnapshot
     }
 
-    /// Cheap: exits immediately unless access is currently not granted.
-    private func recoverAuthorizationIfNeeded() {
+    /// On panel open, reconcile our cached authorization with the system's, in
+    /// both directions: access granted after launch, or revoked while running.
+    /// Cheap — the status read is synchronous and work is spawned only on a real change.
+    private func reconcileAuthorization() {
         guard let calendarManager, let preferences,
-              calendarManager.authorizationState != .granted else { return }
+              calendarManager.authorizationStatusChanged() else { return }
         Task { [weak self] in
             await calendarManager.reevaluateAuthorizationIfNeeded(using: preferences)
             self?.refreshSnapshot()

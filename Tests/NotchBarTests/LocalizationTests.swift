@@ -11,4 +11,9 @@ final class LocalizationTests: XCTestCase {
         let value = Localized.string("Next event in: \("01:02:03:04")", locale: Locale(identifier: "fr"))
         XCTAssertEqual(value, "Prochain événement dans : 01:02:03:04")
     }
+
+    func test_frenchAccessRevoked_resolves() {
+        let value = Localized.string("Calendar access is off — re-enable in Settings", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Accès au calendrier désactivé — réactivez-le dans les Réglages")
+    }
 }

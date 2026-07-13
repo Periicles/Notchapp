@@ -41,17 +41,36 @@ final class CalendarManager: ObservableObject {
         startPolling(preferences: preferences)
     }
 
+    /// Cheap synchronous check used on the hover path: has the OS authorization
+    /// status diverged from our cached state, in either direction?
+    func authorizationStatusChanged() -> Bool {
+        Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event)) != authorizationState
+    }
+
+    /// Reconcile the cached authorization with the system's. Handles both a grant
+    /// after launch (loads calendars, starts polling) and a revocation while running
+    /// (stops polling, clears events so the notch shows the access-off state).
     func reevaluateAuthorizationIfNeeded(using preferences: Preferences) async {
-        guard authorizationState != .granted else { return }
         let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
         guard latest != authorizationState else { return }
+
+        let wasGranted = authorizationState == .granted
         authorizationState = latest
         Log.calendar.info("Authorization changed: \(String(describing: latest), privacy: .public)")
-        guard latest == .granted else { return }
-        availableCalendars = store.calendars(for: .event)
-        preferences.ensureDefaultSelection(using: availableCalendars, store: store)
-        await refreshEvents(using: preferences)
-        startPolling(preferences: preferences)
+
+        switch latest {
+        case .granted:
+            availableCalendars = store.calendars(for: .event)
+            preferences.ensureDefaultSelection(using: availableCalendars, store: store)
+            await refreshEvents(using: preferences)
+            startPolling(preferences: preferences)
+        case .denied, .insufficient:
+            if wasGranted {
+                stopPollingAndClearEvents()
+            }
+        case .unknown:
+            break
+        }
     }
 
     func refreshEvents(using preferences: Preferences) async {
@@ -119,6 +138,14 @@ final class CalendarManager: ObservableObject {
                 await self.refreshEvents(using: preferences)
             }
         }
+    }
+
+    private func stopPollingAndClearEvents() {
+        refreshTask?.cancel()
+        refreshTask = nil
+        currentEvent = nil
+        nextEvent = nil
+        Log.calendar.info("Polling stopped: calendar access lost")
     }
 
     private func handleStoreChanged(using preferences: Preferences) async {
