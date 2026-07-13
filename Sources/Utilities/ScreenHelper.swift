@@ -1,7 +1,8 @@
 import AppKit
 
 enum ScreenHelper {
-    static let openNotchSize = CGSize(width: 640, height: 190)
+    // Deployed (hover-expanded) panel size, 25% smaller than the original 640×190.
+    static let openNotchSize = CGSize(width: 480, height: 143)
     static let panelWidth: CGFloat = openNotchSize.width
     static let panelHeight: CGFloat = openNotchSize.height
     static let panelTopBleed: CGFloat = 2
