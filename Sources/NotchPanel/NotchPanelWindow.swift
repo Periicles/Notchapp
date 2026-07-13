@@ -27,7 +27,12 @@ final class NotchPanelWindow: NSPanel {
             .ignoresCycle,
         ]
         isReleasedWhenClosed = false
-        level = .statusBar
+        // Sit at the shielding level (above the menu bar) rather than .statusBar.
+        // .canJoinAllSpaces + .stationary keep the panel on every Space and out of
+        // Mission Control, but at .statusBar the interactive desktop-switch gesture
+        // still drags the panel along with the sliding Space. The shielding level is
+        // treated as fixed system UI, so the notch stays pinned across Space switches.
+        level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
         hasShadow = false
         hidesOnDeactivate = false
     }
