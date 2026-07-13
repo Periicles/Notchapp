@@ -28,7 +28,11 @@ final class CalendarManager: ObservableObject {
     func bootstrap(using preferences: Preferences) async {
         installStoreObserver(preferences: preferences)
 
-        authorizationState = await requestAccessIfNeeded()
+        let requested = await requestAccessIfNeeded()
+        // A store-change notification during the await may have already run recovery.
+        guard authorizationState != .granted else { return }
+        authorizationState = requested
+        Log.calendar.info("Bootstrap authorization: \(String(describing: self.authorizationState), privacy: .public)")
         guard authorizationState == .granted else { return }
 
         availableCalendars = store.calendars(for: .event)
@@ -42,6 +46,7 @@ final class CalendarManager: ObservableObject {
         let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
         guard latest != authorizationState else { return }
         authorizationState = latest
+        Log.calendar.info("Authorization changed: \(String(describing: latest), privacy: .public)")
         guard latest == .granted else { return }
         availableCalendars = store.calendars(for: .event)
         preferences.ensureDefaultSelection(using: availableCalendars, store: store)
@@ -50,11 +55,16 @@ final class CalendarManager: ObservableObject {
     }
 
     func refreshEvents(using preferences: Preferences) async {
-        guard authorizationState == .granted else { return }
+        guard authorizationState == .granted else {
+            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
+            return
+        }
 
-        guard let calendar = selectedCalendar(using: preferences) else {
+        let calendars = selectedCalendars(using: preferences)
+        guard !calendars.isEmpty else {
             currentEvent = nil
             nextEvent = nil
+            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
             return
         }
 
@@ -63,7 +73,7 @@ final class CalendarManager: ObservableObject {
         let predicate = store.predicateForEvents(
             withStart: now.addingTimeInterval(-8 * 3600),
             end: endOfWindow,
-            calendars: [calendar]
+            calendars: calendars
         )
 
         let events = store.events(matching: predicate)
@@ -72,161 +82,36 @@ final class CalendarManager: ObservableObject {
 
         currentEvent = events.first(where: { $0.startDate <= now && $0.endDate > now })
         nextEvent = events.first(where: { $0.startDate > now })
+        Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
     }
 
-    func selectedCalendar(using preferences: Preferences) -> EKCalendar? {
-        guard let identifier = preferences.selectedCalendarIdentifier else { return nil }
-        return availableCalendars.first { $0.calendarIdentifier == identifier }
+    func selectedCalendars(using preferences: Preferences) -> [EKCalendar] {
+        availableCalendars.filter { preferences.selectedCalendarIdentifiers.contains($0.calendarIdentifier) }
     }
 
-    func currentSnapshot(selectedCalendarID: String?, now: Date = .now) -> EventProgressSnapshot {
+    func currentSnapshot(selectedCalendarIDs: Set<String>, now: Date = .now) -> EventProgressSnapshot {
         let inputs = ([currentEvent, nextEvent].compactMap { $0 }).map { event -> CalendarEvent in
             CalendarEvent(
                 title: event.title ?? "",
                 startDate: event.startDate,
                 endDate: event.endDate,
                 calendarIdentifier: event.calendar.calendarIdentifier,
-                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor)
+                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor),
+                joinURL: MeetingLinkDetector.detect(url: event.url, location: event.location, notes: event.notes)
             )
         }
 
-        return Self.computeSnapshot(
+        return SnapshotBuilder.computeSnapshot(
             events: inputs,
-            selectedCalendarID: selectedCalendarID,
+            selectedCalendarIDs: selectedCalendarIDs,
             now: now,
             calendar: .current
         )
     }
 
-    static func computeSnapshot(
-        events: [CalendarEvent],
-        selectedCalendarID: String?,
-        now: Date,
-        calendar: Calendar
-    ) -> EventProgressSnapshot {
-        guard let selectedCalendarID else {
-            return .noCalendar
-        }
-
-        let relevant = events
-            .filter { $0.calendarIdentifier == selectedCalendarID }
-            .sorted { $0.startDate < $1.startDate }
-
-        if let current = relevant.first(where: { $0.startDate <= now && $0.endDate > now }) {
-            return inProgressSnapshot(for: current, now: now)
-        }
-
-        guard let next = relevant.first(where: { $0.startDate > now }) else {
-            return .emptyToday
-        }
-
-        let secondsUntilStart = next.startDate.timeIntervalSince(now)
-
-        if secondsUntilStart <= 5 * 60 {
-            return startingSoonSnapshot(for: next, now: now)
-        }
-
-        let endOfToday = calendar.startOfDay(for: now.addingTimeInterval(86400))
-        if next.startDate < endOfToday {
-            return upcomingTodaySnapshot(for: next, now: now)
-        }
-
-        return upcomingLaterSnapshot(for: next, now: now)
-    }
-
-    private static func upcomingLaterSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
-        let interval = max(event.startDate.timeIntervalSince(now), 0)
-        let totalSeconds = Int(interval)
-        let days = totalSeconds / 86400
-        let hours = (totalSeconds % 86400) / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        let countdown = String(format: "%02d:%02d:%02d:%02d", days, hours, minutes, seconds)
-
-        return EventProgressSnapshot(
-            title: event.title.nilIfEmpty ?? "Upcoming Meeting",
-            progress: 0,
-            startTimeLabel: formattedTime(event.startDate),
-            endTimeLabel: formattedTime(event.endDate),
-            elapsedLabel: "",
-            remainingLabel: "",
-            statusLabel: "Upcoming",
-            secondaryMessage: "Next event in: \(countdown)",
-            tint: event.color,
-            state: .upcomingLater
-        )
-    }
-
-    private static func inProgressSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
-        let total = event.endDate.timeIntervalSince(event.startDate)
-        let elapsed = now.timeIntervalSince(event.startDate)
-        let progress = min(max(elapsed / max(total, 1), 0), 1)
-        let elapsedSeconds = max(Int(elapsed), 0)
-        let remainingSeconds = max(Int(event.endDate.timeIntervalSince(now)), 0)
-
-        return EventProgressSnapshot(
-            title: event.title.nilIfEmpty ?? "Current Meeting",
-            progress: progress,
-            startTimeLabel: formattedTime(event.startDate),
-            endTimeLabel: formattedTime(event.endDate),
-            elapsedLabel: formatDuration(seconds: elapsedSeconds),
-            remainingLabel: formatDuration(seconds: remainingSeconds),
-            statusLabel: "In progress",
-            secondaryMessage: nil,
-            tint: event.color,
-            state: .inProgress
-        )
-    }
-
-    private static func startingSoonSnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
-        let title = event.title.nilIfEmpty ?? "Upcoming Meeting"
-        let minutes = max(Int(event.startDate.timeIntervalSince(now) / 60), 0)
-        let message = minutes == 0
-            ? "Starts now — \(title)"
-            : "Starts in \(minutes)m — \(title)"
-
-        return EventProgressSnapshot(
-            title: title,
-            progress: 0,
-            startTimeLabel: formattedTime(event.startDate),
-            endTimeLabel: formattedTime(event.endDate),
-            elapsedLabel: "",
-            remainingLabel: "",
-            statusLabel: "Starts soon",
-            secondaryMessage: message,
-            tint: event.color,
-            state: .startingSoon
-        )
-    }
-
-    private static func upcomingTodaySnapshot(for event: CalendarEvent, now: Date) -> EventProgressSnapshot {
-        let title = event.title.nilIfEmpty ?? "Upcoming Meeting"
-        let interval = max(event.startDate.timeIntervalSince(now), 0)
-        let totalMinutes = Int(interval / 60)
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-
-        let countdown = hours == 0
-            ? "\(minutes)min"
-            : "\(hours)h \(minutes)min"
-
-        return EventProgressSnapshot(
-            title: title,
-            progress: 0,
-            startTimeLabel: formattedTime(event.startDate),
-            endTimeLabel: formattedTime(event.endDate),
-            elapsedLabel: "",
-            remainingLabel: "",
-            statusLabel: "Upcoming today",
-            secondaryMessage: "Next: \(title) in \(countdown)",
-            tint: event.color,
-            state: .upcomingToday
-        )
-    }
-
     private func startPolling(preferences: Preferences) {
         refreshTask?.cancel()
+        Log.calendar.info("Polling started")
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
@@ -240,14 +125,12 @@ final class CalendarManager: ObservableObject {
         await reevaluateAuthorizationIfNeeded(using: preferences)
         guard authorizationState == .granted else { return }
         availableCalendars = store.calendars(for: .event)
-        let availableIDs = availableCalendars.map(\.calendarIdentifier)
         let resolved = Preferences.resolveSelection(
-            current: preferences.selectedCalendarIdentifier,
-            available: availableIDs
+            current: preferences.selectedCalendarIdentifiers,
+            available: availableCalendars.map(\.calendarIdentifier)
         )
-        if resolved == nil {
-            preferences.selectedCalendarIdentifier = nil
-            preferences.ensureDefaultSelection(using: availableCalendars, store: store)
+        if resolved != preferences.selectedCalendarIdentifiers {
+            preferences.selectedCalendarIdentifiers = resolved
         }
         await refreshEvents(using: preferences)
     }
@@ -286,33 +169,8 @@ final class CalendarManager: ObservableObject {
             let granted = try await store.requestFullAccessToEvents()
             return granted ? .granted : .denied
         } catch {
+            Log.calendar.error("Full-access request failed: \(error.localizedDescription, privacy: .public)")
             return .denied
         }
-    }
-
-    private static func formatDuration(seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let seconds = seconds % 60
-
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-    }
-
-    private static func formattedTime(_ date: Date) -> String {
-        date.formatted(date: .omitted, time: .shortened)
-    }
-}
-
-struct CalendarEvent: Equatable {
-    let title: String
-    let startDate: Date
-    let endDate: Date
-    let calendarIdentifier: String
-    let color: Color
-}
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
     }
 }

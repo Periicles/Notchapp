@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "NotchBar",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
     ],
@@ -15,7 +16,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "NotchBar",
-            path: "Sources"
+            path: "Sources",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "NotchBarTests",

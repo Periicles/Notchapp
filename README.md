@@ -4,18 +4,20 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 
 ## What it does
 
-- Picks one calendar from your Mac (radio-button selection in Settings).
+- Pick one or more calendars (checkboxes in Settings).
+- If a tracked calendar is deleted or unshared, NotchBar won't auto-pick a replacement — reselect one in Settings.
+- English and French, following the system language.
 - The notch stays solid black at rest — no information leaks until you hover.
-- On hover, the panel expands and shows one of six contextual states:
+- On hover, the panel expands and shows one of six contextual states, computed across the events of every tracked calendar:
 
 | State | Trigger | Shown |
 |---|---|---|
-| **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining |
-| **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` |
+| **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
+| **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next event in: DD:HH:MM:SS` (live countdown) |
 | **Empty today** | No events found | `No event today` |
-| **No calendar** | No calendar selected | `Pick a calendar in Settings` |
+| **No calendar** | No calendars selected | `Pick a calendar in Settings` |
 
 ## Project layout
 
@@ -25,7 +27,8 @@ Sources/
 ├── NotchPanel/                    # NSPanel windows, hover tracking, SwiftUI rendering
 ├── Calendar/                      # EventKit access + event snapshot model
 ├── Settings/                      # UserDefaults-backed preferences + settings UI
-└── Utilities/ScreenHelper.swift   # Physical notch geometry
+├── Utilities/                     # ScreenHelper (notch geometry) + Localized helper
+└── Resources/                     # en.lproj/ + fr.lproj/ Localizable.strings, processed natively by SwiftPM
 Tests/
 └── NotchBarTests/                 # XCTest target (@testable import NotchBar)
 Supporting/
@@ -67,7 +70,7 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 > **Why the extra step?** macOS blocks it only because NotchBar isn't notarized by Apple yet — it's safe, just unsigned. You do this once; afterwards it opens with a normal double-click. (Notarization is on the roadmap.)
 
-On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose a calendar.
+On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose which calendars to track.
 
 ## Uninstall
 
@@ -93,7 +96,7 @@ swift build
 swift run
 ```
 
-On first launch, grant Calendar access when the system prompt appears (or later via **System Settings → Privacy & Security → Calendars**). Then hover over the physical notch and click the settings icon to choose a calendar.
+On first launch, grant Calendar access when the system prompt appears (or later via **System Settings → Privacy & Security → Calendars**). Then hover over the physical notch and click the settings icon to choose which calendars to track.
 
 ## Development
 

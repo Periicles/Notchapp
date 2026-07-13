@@ -26,13 +26,14 @@ final class SnapshotComputationTests: XCTestCase {
 
     // MARK: - .noCalendar
 
-    func test_state_isNoCalendar_whenSelectedIDIsNil() {
+    func test_state_isNoCalendar_whenSelectedIDsIsEmpty() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: nil,
+            selectedCalendarIDs: [],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .noCalendar)
@@ -43,11 +44,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isInProgress_whenEventOverlapsNow() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
@@ -58,30 +60,79 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_inProgress_filtersByCalendarID() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [
                 makeEvent(title: "Wrong cal", startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now),
                 makeEvent(title: "Right cal", startOffset: -120, durationSeconds: 1800, relativeTo: now)
             ],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
         XCTAssertEqual(snapshot.title, "Right cal")
     }
 
+    // MARK: - Multiple selected calendars
+
+    func test_eventsMergedAcrossSelectedCalendars() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Cal B event", startOffset: 3600, durationSeconds: 1800,
+                          calendarID: otherCalendarID, relativeTo: now),
+                makeEvent(title: "Cal A event", startOffset: 7200, durationSeconds: 1800, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID, otherCalendarID],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en")
+        )
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+        XCTAssertEqual(snapshot.secondaryMessage, "Next: Cal B event in 1h 0min")
+    }
+
+    func test_overlappingEvents_showEarliestStart() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Started second", startOffset: -600, durationSeconds: 3600,
+                          calendarID: otherCalendarID, relativeTo: now),
+                makeEvent(title: "Started first", startOffset: -1200, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID, otherCalendarID],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en")
+        )
+        XCTAssertEqual(snapshot.title, "Started first")
+    }
+
+    func test_emptySelection_isNoCalendar() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarIDs: [],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en")
+        )
+        XCTAssertEqual(snapshot.state, .noCalendar)
+    }
+
     // MARK: - .startingSoon
 
     func test_state_isStartingSoon_whenNextEventWithinFiveMinutes() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: 180, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .startingSoon)
@@ -90,11 +141,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_startingSoon_atExactFiveMinuteBoundary() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: 300, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .startingSoon)
@@ -104,11 +156,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingToday_whenEventLaterTodayBeyondFiveMinutes() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Algo", startOffset: 2 * 3600 + 14 * 60, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingToday)
@@ -117,11 +170,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_upcomingToday_minutesOnly_whenUnderOneHour() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Coffee", startOffset: 45 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingToday)
@@ -132,11 +186,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingLater_whenNextEventIsTomorrow() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Tomorrow", startOffset: 86_400, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.statusLabel, "Upcoming")
@@ -144,11 +199,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingLater_whenNextEventInThreeDays() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 03:00:00:00")
@@ -157,11 +213,12 @@ final class SnapshotComputationTests: XCTestCase {
     func test_boundary_eventBeforeMidnight_isUpcomingToday() {
         let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
                                 to: calendar.startOfDay(for: fixedNoon()))!
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Late", startOffset: 20 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingToday)
     }
@@ -169,11 +226,12 @@ final class SnapshotComputationTests: XCTestCase {
     func test_boundary_eventAfterMidnight_isUpcomingLater() {
         let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
                                 to: calendar.startOfDay(for: fixedNoon()))!
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Early", startOffset: 40 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 00:00:40:00")
@@ -182,11 +240,12 @@ final class SnapshotComputationTests: XCTestCase {
     func test_upcomingLater_countdownFormat() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingLater)
@@ -197,11 +256,12 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isEmptyToday_whenAllEventsAreInThePast() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -3600, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .emptyToday)
@@ -209,14 +269,15 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isEmptyToday_whenEventsExistButNoneMatchSelectedID() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [
                 makeEvent(startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now)
             ],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .emptyToday)
@@ -228,16 +289,38 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let duration: TimeInterval = 1000
         let elapsed = duration * 0.997
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -elapsed, durationSeconds: duration, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
         XCTAssertEqual(snapshot.progress, 0.997, accuracy: 0.0001)
         XCTAssertLessThan(snapshot.progress, 1.0)
+    }
+
+    // MARK: - joinURL propagation
+
+    func test_joinURL_propagatedForInProgress() {
+        let now = fixedNoon()
+        let join = URL(string: "https://meet.google.com/abc-defg-hij")!
+        var event = makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)
+        event.joinURL = join
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [event], selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
+        )
+        XCTAssertEqual(snapshot.joinURL, join)
+    }
+
+    func test_joinURL_nilForEmptyToday() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [], selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
+        )
+        XCTAssertNil(snapshot.joinURL)
     }
 
     // MARK: - Equatable (guards redundant @Published invalidations)
@@ -246,11 +329,11 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let events = [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
-        let first = CalendarManager.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        let first = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
-        let second = CalendarManager.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        let second = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(first, second)
@@ -260,18 +343,18 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let events = [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
-        let earlier = CalendarManager.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+        let earlier = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
-        let later = CalendarManager.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now.addingTimeInterval(1), calendar: calendar
+        let later = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now.addingTimeInterval(1), calendar: calendar, locale: Locale(identifier: "en")
         )
 
         XCTAssertNotEqual(earlier, later)
     }
 
     func test_snapshot_isNotEqual_acrossDifferentStates() {
-        XCTAssertNotEqual(EventProgressSnapshot.noCalendar, EventProgressSnapshot.emptyToday)
+        XCTAssertNotEqual(EventProgressSnapshot.noCalendar(), EventProgressSnapshot.emptyToday())
     }
 
     // MARK: - Helpers

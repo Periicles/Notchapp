@@ -16,18 +16,24 @@ struct SettingsView: View {
                 .font(.headline)
 
             if calendarManager.authorizationState == .denied {
-                Text("Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.")
+                Text(
+                    "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.",
+                    bundle: .module
+                )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else if calendarManager.authorizationState == .insufficient {
                 Text(
-                    "NotchBar has write-only calendar access and cannot read your events. "
-                    + "Switch it to Full Access in System Settings > Privacy & Security > Calendars."
+                    """
+                    NotchBar has write-only calendar access and cannot read your events. \
+                    Switch it to Full Access in System Settings > Privacy & Security > Calendars.
+                    """,
+                    bundle: .module
                 )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Tracked Calendar")
+                Text("Tracked Calendars", bundle: .module)
                     .font(.subheadline.weight(.semibold))
 
                 ScrollView {
@@ -40,7 +46,9 @@ struct SettingsView: View {
                 .frame(maxHeight: 220)
             }
 
-            Toggle("Launch at login", isOn: $launchAtLoginEnabled)
+            Toggle(isOn: $launchAtLoginEnabled) {
+                Text("Launch at login", bundle: .module)
+            }
                 .toggleStyle(.switch)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
                     setLaunchAtLogin(newValue)
@@ -54,8 +62,10 @@ struct SettingsView: View {
 
             HStack {
                 Spacer()
-                Button("Quit NotchBar") {
+                Button {
                     NSApplication.shared.terminate(nil)
+                } label: {
+                    Text("Quit NotchBar", bundle: .module)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 12))
@@ -64,22 +74,20 @@ struct SettingsView: View {
         }
         .padding(14)
         .frame(width: 320)
-        .onChange(of: preferences.selectedCalendarIdentifier) { _, _ in
+        .onChange(of: preferences.selectedCalendarIdentifiers) { _, _ in
             onPreferencesChanged()
         }
     }
 
     private func calendarRow(for calendar: EKCalendar) -> some View {
-        let isSelected = preferences.selectedCalendarIdentifier == calendar.calendarIdentifier
+        let isSelected = preferences.selectedCalendarIdentifiers.contains(calendar.calendarIdentifier)
         let dotColor = Color(nsColor: NSColor(cgColor: calendar.cgColor) ?? .controlAccentColor)
 
         return Button {
-            if !isSelected {
-                preferences.selectedCalendarIdentifier = calendar.calendarIdentifier
-            }
+            preferences.selectedCalendarIdentifiers.formSymmetricDifference([calendar.calendarIdentifier])
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .font(.system(size: 14))
 
@@ -108,6 +116,7 @@ struct SettingsView: View {
             }
         } catch {
             launchAtLoginEnabled.toggle()
+            Log.preferences.error("Launch-at-login toggle failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
