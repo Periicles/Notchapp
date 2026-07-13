@@ -26,11 +26,11 @@ final class SnapshotComputationTests: XCTestCase {
 
     // MARK: - .noCalendar
 
-    func test_state_isNoCalendar_whenSelectedIDIsNil() {
+    func test_state_isNoCalendar_whenSelectedIDsIsEmpty() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: nil,
+            selectedCalendarIDs: [],
             now: now,
             calendar: calendar
         )
@@ -45,7 +45,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -64,7 +64,7 @@ final class SnapshotComputationTests: XCTestCase {
                           calendarID: otherCalendarID, relativeTo: now),
                 makeEvent(title: "Right cal", startOffset: -120, durationSeconds: 1800, relativeTo: now)
             ],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -73,13 +73,57 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.title, "Right cal")
     }
 
+    // MARK: - Multiple selected calendars
+
+    func test_eventsMergedAcrossSelectedCalendars() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Cal B event", startOffset: 3600, durationSeconds: 1800,
+                          calendarID: otherCalendarID, relativeTo: now),
+                makeEvent(title: "Cal A event", startOffset: 7200, durationSeconds: 1800, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID, otherCalendarID],
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+        XCTAssertEqual(snapshot.secondaryMessage, "Next: Cal B event in 1h 0min")
+    }
+
+    func test_overlappingEvents_showEarliestStart() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Started second", startOffset: -600, durationSeconds: 3600,
+                          calendarID: otherCalendarID, relativeTo: now),
+                makeEvent(title: "Started first", startOffset: -1200, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID, otherCalendarID],
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.title, "Started first")
+    }
+
+    func test_emptySelection_isNoCalendar() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarIDs: [],
+            now: now,
+            calendar: calendar
+        )
+        XCTAssertEqual(snapshot.state, .noCalendar)
+    }
+
     // MARK: - .startingSoon
 
     func test_state_isStartingSoon_whenNextEventWithinFiveMinutes() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: 180, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -92,7 +136,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: 300, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -106,7 +150,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Algo", startOffset: 2 * 3600 + 14 * 60, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -119,7 +163,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Coffee", startOffset: 45 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -134,7 +178,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Tomorrow", startOffset: 86_400, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -146,7 +190,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -159,7 +203,7 @@ final class SnapshotComputationTests: XCTestCase {
                                 to: calendar.startOfDay(for: fixedNoon()))!
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Late", startOffset: 20 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -171,7 +215,7 @@ final class SnapshotComputationTests: XCTestCase {
                                 to: calendar.startOfDay(for: fixedNoon()))!
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Early", startOffset: 40 * 60, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -184,7 +228,7 @@ final class SnapshotComputationTests: XCTestCase {
         let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -199,7 +243,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -3600, durationSeconds: 1800, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -214,7 +258,7 @@ final class SnapshotComputationTests: XCTestCase {
                 makeEvent(startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now)
             ],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -230,7 +274,7 @@ final class SnapshotComputationTests: XCTestCase {
         let elapsed = duration * 0.997
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -elapsed, durationSeconds: duration, relativeTo: now)],
-            selectedCalendarID: calendarID,
+            selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar
         )
@@ -248,7 +292,7 @@ final class SnapshotComputationTests: XCTestCase {
         var event = makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)
         event.joinURL = join
         let snapshot = SnapshotBuilder.computeSnapshot(
-            events: [event], selectedCalendarID: calendarID, now: now, calendar: calendar
+            events: [event], selectedCalendarIDs: [calendarID], now: now, calendar: calendar
         )
         XCTAssertEqual(snapshot.joinURL, join)
     }
@@ -256,7 +300,7 @@ final class SnapshotComputationTests: XCTestCase {
     func test_joinURL_nilForEmptyToday() {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
-            events: [], selectedCalendarID: calendarID, now: now, calendar: calendar
+            events: [], selectedCalendarIDs: [calendarID], now: now, calendar: calendar
         )
         XCTAssertNil(snapshot.joinURL)
     }
@@ -268,10 +312,10 @@ final class SnapshotComputationTests: XCTestCase {
         let events = [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
         let first = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
         )
         let second = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
         )
 
         XCTAssertEqual(first, second)
@@ -282,10 +326,10 @@ final class SnapshotComputationTests: XCTestCase {
         let events = [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
         let earlier = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
         )
         let later = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarID: calendarID, now: now.addingTimeInterval(1), calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now.addingTimeInterval(1), calendar: calendar
         )
 
         XCTAssertNotEqual(earlier, later)

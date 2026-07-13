@@ -60,7 +60,8 @@ final class CalendarManager: ObservableObject {
             return
         }
 
-        guard let calendar = selectedCalendar(using: preferences) else {
+        let calendars = selectedCalendars(using: preferences)
+        guard !calendars.isEmpty else {
             currentEvent = nil
             nextEvent = nil
             Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
@@ -72,7 +73,7 @@ final class CalendarManager: ObservableObject {
         let predicate = store.predicateForEvents(
             withStart: now.addingTimeInterval(-8 * 3600),
             end: endOfWindow,
-            calendars: [calendar]
+            calendars: calendars
         )
 
         let events = store.events(matching: predicate)
@@ -84,12 +85,11 @@ final class CalendarManager: ObservableObject {
         Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
     }
 
-    func selectedCalendar(using preferences: Preferences) -> EKCalendar? {
-        guard let identifier = preferences.selectedCalendarIdentifier else { return nil }
-        return availableCalendars.first { $0.calendarIdentifier == identifier }
+    func selectedCalendars(using preferences: Preferences) -> [EKCalendar] {
+        availableCalendars.filter { preferences.selectedCalendarIdentifiers.contains($0.calendarIdentifier) }
     }
 
-    func currentSnapshot(selectedCalendarID: String?, now: Date = .now) -> EventProgressSnapshot {
+    func currentSnapshot(selectedCalendarIDs: Set<String>, now: Date = .now) -> EventProgressSnapshot {
         let inputs = ([currentEvent, nextEvent].compactMap { $0 }).map { event -> CalendarEvent in
             CalendarEvent(
                 title: event.title ?? "",
@@ -103,7 +103,7 @@ final class CalendarManager: ObservableObject {
 
         return SnapshotBuilder.computeSnapshot(
             events: inputs,
-            selectedCalendarID: selectedCalendarID,
+            selectedCalendarIDs: selectedCalendarIDs,
             now: now,
             calendar: .current
         )
@@ -125,14 +125,12 @@ final class CalendarManager: ObservableObject {
         await reevaluateAuthorizationIfNeeded(using: preferences)
         guard authorizationState == .granted else { return }
         availableCalendars = store.calendars(for: .event)
-        let availableIDs = availableCalendars.map(\.calendarIdentifier)
         let resolved = Preferences.resolveSelection(
-            current: preferences.selectedCalendarIdentifier,
-            available: availableIDs
+            current: preferences.selectedCalendarIdentifiers,
+            available: availableCalendars.map(\.calendarIdentifier)
         )
-        if resolved == nil {
-            preferences.selectedCalendarIdentifier = nil
-            preferences.ensureDefaultSelection(using: availableCalendars, store: store)
+        if resolved != preferences.selectedCalendarIdentifiers {
+            preferences.selectedCalendarIdentifiers = resolved
         }
         await refreshEvents(using: preferences)
     }
