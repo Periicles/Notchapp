@@ -32,7 +32,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .noCalendar)
@@ -47,7 +48,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
@@ -66,7 +68,8 @@ final class SnapshotComputationTests: XCTestCase {
             ],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
@@ -85,7 +88,8 @@ final class SnapshotComputationTests: XCTestCase {
             ],
             selectedCalendarIDs: [calendarID, otherCalendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingToday)
         XCTAssertEqual(snapshot.secondaryMessage, "Next: Cal B event in 1h 0min")
@@ -101,7 +105,8 @@ final class SnapshotComputationTests: XCTestCase {
             ],
             selectedCalendarIDs: [calendarID, otherCalendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.title, "Started first")
     }
@@ -112,7 +117,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .noCalendar)
     }
@@ -125,7 +131,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Standup", startOffset: 180, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .startingSoon)
@@ -138,7 +145,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(startOffset: 300, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .startingSoon)
@@ -152,7 +160,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Algo", startOffset: 2 * 3600 + 14 * 60, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingToday)
@@ -165,7 +174,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Coffee", startOffset: 45 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingToday)
@@ -180,7 +190,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Tomorrow", startOffset: 86_400, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.statusLabel, "Upcoming")
@@ -192,7 +203,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 03:00:00:00")
@@ -205,7 +217,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Late", startOffset: 20 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingToday)
     }
@@ -217,7 +230,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Early", startOffset: 40 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
         XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 00:00:40:00")
@@ -230,7 +244,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .upcomingLater)
@@ -245,7 +260,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(startOffset: -3600, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .emptyToday)
@@ -260,7 +276,8 @@ final class SnapshotComputationTests: XCTestCase {
             ],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .emptyToday)
@@ -276,7 +293,8 @@ final class SnapshotComputationTests: XCTestCase {
             events: [makeEvent(startOffset: -elapsed, durationSeconds: duration, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
-            calendar: calendar
+            calendar: calendar,
+            locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(snapshot.state, .inProgress)
@@ -292,7 +310,7 @@ final class SnapshotComputationTests: XCTestCase {
         var event = makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)
         event.joinURL = join
         let snapshot = SnapshotBuilder.computeSnapshot(
-            events: [event], selectedCalendarIDs: [calendarID], now: now, calendar: calendar
+            events: [event], selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
         XCTAssertEqual(snapshot.joinURL, join)
     }
@@ -300,7 +318,7 @@ final class SnapshotComputationTests: XCTestCase {
     func test_joinURL_nilForEmptyToday() {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
-            events: [], selectedCalendarIDs: [calendarID], now: now, calendar: calendar
+            events: [], selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
         XCTAssertNil(snapshot.joinURL)
     }
@@ -312,10 +330,10 @@ final class SnapshotComputationTests: XCTestCase {
         let events = [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
         let first = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
         let second = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
 
         XCTAssertEqual(first, second)
@@ -326,17 +344,17 @@ final class SnapshotComputationTests: XCTestCase {
         let events = [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
         let earlier = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: Locale(identifier: "en")
         )
         let later = SnapshotBuilder.computeSnapshot(
-            events: events, selectedCalendarIDs: [calendarID], now: now.addingTimeInterval(1), calendar: calendar
+            events: events, selectedCalendarIDs: [calendarID], now: now.addingTimeInterval(1), calendar: calendar, locale: Locale(identifier: "en")
         )
 
         XCTAssertNotEqual(earlier, later)
     }
 
     func test_snapshot_isNotEqual_acrossDifferentStates() {
-        XCTAssertNotEqual(EventProgressSnapshot.noCalendar, EventProgressSnapshot.emptyToday)
+        XCTAssertNotEqual(EventProgressSnapshot.noCalendar(), EventProgressSnapshot.emptyToday())
     }
 
     // MARK: - Helpers

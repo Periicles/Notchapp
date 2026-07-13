@@ -16,18 +16,24 @@ struct SettingsView: View {
                 .font(.headline)
 
             if calendarManager.authorizationState == .denied {
-                Text("Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.")
+                Text(
+                    "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.",
+                    bundle: .module
+                )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else if calendarManager.authorizationState == .insufficient {
                 Text(
-                    "NotchBar has write-only calendar access and cannot read your events. "
-                    + "Switch it to Full Access in System Settings > Privacy & Security > Calendars."
+                    """
+                    NotchBar has write-only calendar access and cannot read your events. \
+                    Switch it to Full Access in System Settings > Privacy & Security > Calendars.
+                    """,
+                    bundle: .module
                 )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Tracked Calendars")
+                Text("Tracked Calendars", bundle: .module)
                     .font(.subheadline.weight(.semibold))
 
                 ScrollView {
@@ -40,7 +46,9 @@ struct SettingsView: View {
                 .frame(maxHeight: 220)
             }
 
-            Toggle("Launch at login", isOn: $launchAtLoginEnabled)
+            Toggle(isOn: $launchAtLoginEnabled) {
+                Text("Launch at login", bundle: .module)
+            }
                 .toggleStyle(.switch)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
                     setLaunchAtLogin(newValue)
@@ -54,8 +62,10 @@ struct SettingsView: View {
 
             HStack {
                 Spacer()
-                Button("Quit NotchBar") {
+                Button {
                     NSApplication.shared.terminate(nil)
+                } label: {
+                    Text("Quit NotchBar", bundle: .module)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 12))

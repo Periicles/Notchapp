@@ -95,11 +95,11 @@ private struct InProgressContent: View {
                 .frame(height: 13)
 
                 HStack(spacing: 12) {
-                    MetricLabel(title: "Elapsed", value: snapshot.elapsedLabel)
+                    MetricLabel(titleKey: "Elapsed", value: snapshot.elapsedLabel)
 
                     Spacer(minLength: 0)
 
-                    MetricLabel(title: "Remaining", value: snapshot.remainingLabel)
+                    MetricLabel(titleKey: "Remaining", value: snapshot.remainingLabel)
                 }
             }
         }
@@ -194,12 +194,12 @@ private struct TimeRangeView: View {
 }
 
 private struct MetricLabel: View {
-    let title: String
+    let titleKey: LocalizedStringKey
     let value: String
 
     var body: some View {
         HStack(spacing: 7) {
-            Text(title)
+            Text(titleKey, bundle: .module)
                 .foregroundStyle(.white.opacity(0.42))
             Text(value.isEmpty ? "--:--:--" : value)
                 .monospacedDigit()
@@ -306,7 +306,7 @@ private struct JoinButton: View {
             HStack(spacing: 6) {
                 Image(systemName: "video.fill")
                     .font(.system(size: 12, weight: .bold))
-                Text("Join")
+                Text("Join", bundle: .module)
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(.white)
