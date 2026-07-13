@@ -6,7 +6,13 @@ import SwiftUI
 final class SnapshotComputationTests: XCTestCase {
     private let calendarID = "test-cal"
     private let otherCalendarID = "other-cal"
-    private let calendar = Calendar(identifier: .gregorian)
+    // Pinned to UTC so day-boundary logic (startOfDay, upcomingToday vs
+    // upcomingLater) is deterministic regardless of the CI runner's time zone.
+    private let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }()
 
     private func makeEvent(
         title: String = "Test Event",
