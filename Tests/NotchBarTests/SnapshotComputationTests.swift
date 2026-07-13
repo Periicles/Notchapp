@@ -28,7 +28,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isNoCalendar_whenSelectedIDIsNil() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: nil,
             now: now,
@@ -43,7 +43,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isInProgress_whenEventOverlapsNow() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -58,7 +58,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_inProgress_filtersByCalendarID() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [
                 makeEvent(title: "Wrong cal", startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now),
@@ -77,7 +77,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isStartingSoon_whenNextEventWithinFiveMinutes() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Standup", startOffset: 180, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -90,7 +90,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_startingSoon_atExactFiveMinuteBoundary() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: 300, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -104,7 +104,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingToday_whenEventLaterTodayBeyondFiveMinutes() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Algo", startOffset: 2 * 3600 + 14 * 60, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -117,7 +117,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_upcomingToday_minutesOnly_whenUnderOneHour() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Coffee", startOffset: 45 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -132,7 +132,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingLater_whenNextEventIsTomorrow() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Tomorrow", startOffset: 86_400, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -144,7 +144,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isUpcomingLater_whenNextEventInThreeDays() {
         let now = fixedNoon()
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -157,7 +157,7 @@ final class SnapshotComputationTests: XCTestCase {
     func test_boundary_eventBeforeMidnight_isUpcomingToday() {
         let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
                                 to: calendar.startOfDay(for: fixedNoon()))!
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Late", startOffset: 20 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -169,7 +169,7 @@ final class SnapshotComputationTests: XCTestCase {
     func test_boundary_eventAfterMidnight_isUpcomingLater() {
         let now = calendar.date(byAdding: DateComponents(hour: 23, minute: 30),
                                 to: calendar.startOfDay(for: fixedNoon()))!
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Early", startOffset: 40 * 60, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -182,7 +182,7 @@ final class SnapshotComputationTests: XCTestCase {
     func test_upcomingLater_countdownFormat() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -197,7 +197,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isEmptyToday_whenAllEventsAreInThePast() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -3600, durationSeconds: 1800, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -209,7 +209,7 @@ final class SnapshotComputationTests: XCTestCase {
 
     func test_state_isEmptyToday_whenEventsExistButNoneMatchSelectedID() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [
                 makeEvent(startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now)
@@ -228,7 +228,7 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let duration: TimeInterval = 1000
         let elapsed = duration * 0.997
-        let snapshot = CalendarManager.computeSnapshot(
+        let snapshot = SnapshotBuilder.computeSnapshot(
             events: [makeEvent(startOffset: -elapsed, durationSeconds: duration, relativeTo: now)],
             selectedCalendarID: calendarID,
             now: now,
@@ -246,10 +246,10 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let events = [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
-        let first = CalendarManager.computeSnapshot(
+        let first = SnapshotBuilder.computeSnapshot(
             events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
         )
-        let second = CalendarManager.computeSnapshot(
+        let second = SnapshotBuilder.computeSnapshot(
             events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
         )
 
@@ -260,10 +260,10 @@ final class SnapshotComputationTests: XCTestCase {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         let events = [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)]
 
-        let earlier = CalendarManager.computeSnapshot(
+        let earlier = SnapshotBuilder.computeSnapshot(
             events: events, selectedCalendarID: calendarID, now: now, calendar: calendar
         )
-        let later = CalendarManager.computeSnapshot(
+        let later = SnapshotBuilder.computeSnapshot(
             events: events, selectedCalendarID: calendarID, now: now.addingTimeInterval(1), calendar: calendar
         )
 
