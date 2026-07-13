@@ -112,6 +112,24 @@ final class NotchPanelController: NSObject {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
+
+        // When the settings menu dismisses, re-evaluate whether the panel should
+        // collapse — the mouse may have wandered off while the menu kept it open.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSettingsPopoverClosed),
+            name: NSPopover.didCloseNotification,
+            object: settingsPopover
+        )
+    }
+
+    @objc
+    private func handleSettingsPopoverClosed() {
+        // Clicking outside the menu dismisses it (transient popover). Collapse the
+        // notch too — but only if the cursor isn't over it, so clicking back on the
+        // notch to close the menu keeps the notch open.
+        guard progressModel.isHoverVisible, !cursorIsOverPanel() else { return }
+        collapsePanel()
     }
 
     @objc
@@ -173,13 +191,27 @@ final class NotchPanelController: NSObject {
 
     private func startCloseMonitor() {
         guard closeMonitor == nil else { return }
-        closeMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+        closeMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .leftMouseDown, .rightMouseDown]
+        ) { [weak self] event in
             guard let self else { return }
             Task { @MainActor [weak self] in
                 guard let self, self.progressModel.isHoverVisible else { return }
-                let loc = NSEvent.mouseLocation
-                if !self.panel.frame.insetBy(dx: -2, dy: -2).contains(loc) {
-                    self.hideIfOutsideOpenPanel()
+
+                switch event.type {
+                case .leftMouseDown, .rightMouseDown:
+                    // A global monitor only receives events destined for *other* apps,
+                    // so any click it sees is off the notch — however far away. Dismiss
+                    // the menu (don't rely on the transient popover doing it across apps)
+                    // and collapse the notch, deterministically.
+                    if self.settingsPopover.isShown {
+                        self.settingsPopover.performClose(nil)
+                    }
+                    self.collapsePanel()
+                default:
+                    if !self.cursorIsOverPanel() {
+                        self.hideIfOutsideOpenPanel()
+                    }
                 }
             }
         }
@@ -194,20 +226,29 @@ final class NotchPanelController: NSObject {
 
     private func hideIfOutsideOpenPanel() {
         guard progressModel.isHoverVisible else { return }
+        // Keep the panel open while the settings menu is up: the popover extends
+        // below the notch, so moving into it leaves panel.frame. Collapsing here
+        // would orphan the menu. handleSettingsPopoverClosed() re-checks on dismiss.
+        guard !settingsPopover.isShown else { return }
 
         hideWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            let mouseLocation = NSEvent.mouseLocation
-            guard !self.panel.frame.insetBy(dx: -2, dy: -2).contains(mouseLocation) else { return }
-
-            self.progressModel.setHoverVisible(false)
-            self.panel.ignoresMouseEvents = true
-            self.sensorPanel.ignoresMouseEvents = false
-            (self.sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
-            self.stopCloseMonitor()
+            guard let self, !self.cursorIsOverPanel() else { return }
+            self.collapsePanel()
         }
         hideWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
+    }
+
+    private func cursorIsOverPanel() -> Bool {
+        panel.frame.insetBy(dx: -2, dy: -2).contains(NSEvent.mouseLocation)
+    }
+
+    private func collapsePanel() {
+        progressModel.setHoverVisible(false)
+        panel.ignoresMouseEvents = true
+        sensorPanel.ignoresMouseEvents = false
+        (sensorPanel.contentView as? TrackingContainerView)?.updateTrackingAreas()
+        stopCloseMonitor()
     }
 }
