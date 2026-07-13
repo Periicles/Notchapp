@@ -21,6 +21,7 @@ struct EventProgressSnapshot: Equatable {
     let secondaryMessage: String?
     let tint: Color
     let state: State
+    var joinURL: URL?
 
     static let noCalendar = EventProgressSnapshot(
         title: "",

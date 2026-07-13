@@ -240,6 +240,27 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertLessThan(snapshot.progress, 1.0)
     }
 
+    // MARK: - joinURL propagation
+
+    func test_joinURL_propagatedForInProgress() {
+        let now = fixedNoon()
+        let join = URL(string: "https://meet.google.com/abc-defg-hij")!
+        var event = makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1800, relativeTo: now)
+        event.joinURL = join
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [event], selectedCalendarID: calendarID, now: now, calendar: calendar
+        )
+        XCTAssertEqual(snapshot.joinURL, join)
+    }
+
+    func test_joinURL_nilForEmptyToday() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [], selectedCalendarID: calendarID, now: now, calendar: calendar
+        )
+        XCTAssertNil(snapshot.joinURL)
+    }
+
     // MARK: - Equatable (guards redundant @Published invalidations)
 
     func test_snapshot_isEqual_forIdenticalInputsAtSameInstant() {

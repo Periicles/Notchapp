@@ -96,7 +96,8 @@ final class CalendarManager: ObservableObject {
                 startDate: event.startDate,
                 endDate: event.endDate,
                 calendarIdentifier: event.calendar.calendarIdentifier,
-                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor)
+                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor),
+                joinURL: MeetingLinkDetector.detect(url: event.url, location: event.location, notes: event.notes)
             )
         }
 

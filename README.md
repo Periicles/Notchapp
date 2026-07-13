@@ -10,8 +10,8 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 
 | State | Trigger | Shown |
 |---|---|---|
-| **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining |
-| **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` |
+| **In progress** | Event overlaps now | Title, start–end times, animated progress bar, elapsed / remaining + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
+| **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next event in: DD:HH:MM:SS` (live countdown) |
 | **Empty today** | No events found | `No event today` |
