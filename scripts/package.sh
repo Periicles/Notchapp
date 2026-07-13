@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 # Builds NotchBar.app and packages it into dist/NotchBar.dmg (unsigned / ad-hoc).
+#
+# Usage: package.sh [SHORT_VERSION] [BUILD_NUMBER]
+#   SHORT_VERSION  overrides CFBundleShortVersionString (e.g. 0.2.0). CI passes
+#                  the value from the git tag; omit for a local dev build.
+#   BUILD_NUMBER   overrides CFBundleVersion (e.g. the CI run number).
+# With no args the bundle keeps whatever Supporting/Info.plist declares.
+#
 # When an Apple Developer ID exists, swap `--sign -` for the identity and add a
 # `notarytool submit --wait` + `stapler staple` step after the dmg build.
 set -euo pipefail
@@ -11,6 +18,8 @@ APP_NAME="NotchBar"
 DIST="$ROOT/dist"
 APP="$DIST/$APP_NAME.app"
 CONTENTS="$APP/Contents"
+SHORT_VERSION="${1:-}"
+BUILD_NUMBER="${2:-}"
 
 echo "==> Cleaning dist/"
 rm -rf "$DIST"
@@ -28,6 +37,15 @@ cp "Supporting/Info.plist"                 "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $APP_NAME" "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string $APP_NAME" "$CONTENTS/Info.plist" 2>/dev/null \
   || /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile $APP_NAME" "$CONTENTS/Info.plist"
+
+if [ -n "$SHORT_VERSION" ]; then
+  echo "==> Setting version $SHORT_VERSION"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $SHORT_VERSION" "$CONTENTS/Info.plist"
+fi
+if [ -n "$BUILD_NUMBER" ]; then
+  echo "==> Setting build $BUILD_NUMBER"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$CONTENTS/Info.plist"
+fi
 
 echo "==> Ad-hoc signing (applies sandbox entitlements)"
 codesign --force --sign - --options runtime \

@@ -150,6 +150,25 @@ docs: document five-state model in README
 
 The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.
 
+## Releasing
+
+Releases are cut by pushing a tag. A GitHub Actions workflow (`.github/workflows/release.yml`) then lints, builds, tests, packages the `.dmg`, and publishes a GitHub Release automatically.
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. Releases are currently marked **pre-release** and are ad-hoc signed (not notarized), so macOS shows the one-time "Open Anyway" step.
+
+**Enabling notarization (later).** Once an Apple Developer ID is available, add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`, then drop `--prerelease`:
+
+| Secret | For |
+|---|---|
+| `MACOS_CERT_P12_BASE64` | Developer ID Application cert (`.p12`), base64-encoded |
+| `MACOS_CERT_PASSWORD` | the `.p12` password |
+| `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD` | `notarytool` credentials |
+
 ## License
 
 NotchBar is released under the [MIT License](LICENSE).

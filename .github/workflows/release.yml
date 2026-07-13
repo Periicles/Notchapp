@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish release
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+      # Runners preinstall untrusted taps; skip the trust prompt.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Derive version from tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing NotchBar $version (build $GITHUB_RUN_NUMBER) from tag $GITHUB_REF_NAME"
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: swiftlint
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Test
+        run: swift test
+
+      - name: Package .dmg
+        run: scripts/package.sh "${{ steps.version.outputs.version }}" "$GITHUB_RUN_NUMBER"
+
+      # --- Notarization (not enabled yet) ---
+      # Once an Apple Developer ID is available, before "Package .dmg" import the
+      # Developer ID cert into a temp keychain from secrets MACOS_CERT_P12_BASE64 /
+      # MACOS_CERT_PASSWORD and replace `--sign -` in scripts/package.sh with the
+      # identity. Then after "Package .dmg" add:
+      #   xcrun notarytool submit dist/NotchBar.dmg --apple-id "$APPLE_ID" \
+      #     --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+      #   xcrun stapler staple dist/NotchBar.dmg
+      # and drop --prerelease from the release step below.
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/NotchBar.dmg \
+            --title "NotchBar $GITHUB_REF_NAME" \
+            --generate-notes \
+            --prerelease
