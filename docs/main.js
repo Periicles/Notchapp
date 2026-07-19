@@ -28,6 +28,8 @@
                      fr: "Va dans Réglages Système → Confidentialité et sécurité, puis clique « Ouvrir quand même » et confirme." },
     "install.note":{ en: "macOS blocks it only because NotchBar isn't notarized by Apple yet — it's safe, just unsigned. You do this once; afterwards it opens with a normal double-click.",
                      fr: "macOS le bloque seulement parce que NotchBar n'est pas encore notariée par Apple — c'est sûr, juste non signé. Tu le fais une fois ; ensuite elle s'ouvre d'un double-clic normal." },
+    "install.brew":{ en: "Prefer the terminal? <code>brew tap periicles/tap &amp;&amp; brew trust periicles/tap &amp;&amp; brew install --cask --no-quarantine notchbar</code>",
+                     fr: "Plutôt le terminal ? <code>brew tap periicles/tap &amp;&amp; brew trust periicles/tap &amp;&amp; brew install --cask --no-quarantine notchbar</code>" },
     "uninstall.line":{ en: "Changed your mind? Turn off <b>Launch at login</b>, then drag NotchBar to the Trash. <a href='https://github.com/Periicles/Notchapp#uninstall'>Full steps</a>.",
                      fr: "Tu changes d'avis ? Désactive <b>Launch at login</b>, puis glisse NotchBar dans la Corbeille. <a href='https://github.com/Periicles/Notchapp#uninstall'>Étapes complètes</a>." },
     "footer.source": { en: "Source on GitHub", fr: "Code sur GitHub" },
