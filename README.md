@@ -65,6 +65,18 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 ## Installation
 
+### Homebrew (recommended if you use the CLI)
+
+```sh
+brew tap periicles/tap
+brew trust periicles/tap          # third-party casks need an explicit trust (Homebrew 6+)
+brew install --cask --no-quarantine notchbar
+```
+
+`--no-quarantine` skips Gatekeeper so NotchBar launches directly — needed until it's Apple-notarized. Update with `brew upgrade --cask notchbar`; remove with `brew uninstall --cask notchbar` (add `--zap` to also delete its data).
+
+### Manual (`.dmg`)
+
 1. Grab it from the [NotchBar website](https://periicles.github.io/Notchapp/), or download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
 2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
 3. Open NotchBar. The first time, macOS blocks it because the app isn't notarized yet.

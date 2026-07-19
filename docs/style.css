@@ -64,6 +64,9 @@ header.site,footer.site{max-width:var(--max);margin:0 auto;padding:22px 24px;
   display:grid;place-items:center;background:var(--ink);color:#fff;border-radius:50%;font-weight:700;font-size:14px}
 .install .note{background:#fff;border:1px solid var(--hair);border-left:3px solid var(--brand);
   border-radius:10px;padding:14px 16px;color:var(--muted);font-size:14.5px;max-width:64ch;margin:0 0 22px}
+.install .brew{color:var(--faint);font-size:13.5px;max-width:64ch;margin:16px 0 0}
+.install .brew code{display:block;margin-top:6px;padding:10px 12px;background:#fff;border:1px solid var(--hair);
+  border-radius:8px;color:var(--muted);font-size:12.5px;overflow-x:auto;white-space:pre}
 .install .uninstall{color:var(--faint);font-size:13.5px;max-width:64ch;margin:16px 0 0}
 .install .uninstall a{color:var(--muted);font-weight:600}
 
