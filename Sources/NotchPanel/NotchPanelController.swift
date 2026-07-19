@@ -160,10 +160,13 @@ final class NotchPanelController: NSObject {
 
         if settingsPopover.contentViewController !== settingsContentController {
             settingsPopover.behavior = .transient
-            settingsPopover.animates = true
             settingsPopover.contentSize = NSSize(width: 320, height: 300)
             settingsPopover.contentViewController = settingsContentController
         }
+
+        // Honor Reduce Motion for the menu's open/close, re-read on each show so a
+        // runtime toggle of the setting takes effect without relaunching.
+        settingsPopover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
 
         let anchorRect = NSRect(
             x: contentView.bounds.maxX - 52,

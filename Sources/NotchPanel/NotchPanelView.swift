@@ -3,10 +3,12 @@ import SwiftUI
 
 struct NotchPanelView: View {
     @ObservedObject var progressModel: EventProgressModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onSettingsTapped: () -> Void
 
     var body: some View {
         let isExpanded = progressModel.isHoverVisible
+        let motion = PanelMotionStyle(reduceMotion: reduceMotion)
 
         ZStack(alignment: .top) {
             // Invisible at rest: on a notched Mac the physical notch already shows
@@ -20,22 +22,22 @@ struct NotchPanelView: View {
                 )
                 .opacity(isExpanded ? 1 : 0)
 
-            NotchContentView(progressModel: progressModel)
+            NotchContentView(progressModel: progressModel, shimmerEnabled: motion.shimmerEnabled)
                 .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
                 .opacity(isExpanded ? 1 : 0)
-                .blur(radius: isExpanded ? 0 : 5)
-                .scaleEffect(isExpanded ? 1 : 0.975, anchor: .top)
-                .offset(y: isExpanded ? 0 : -7)
-                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
+                .blur(radius: isExpanded ? 0 : motion.collapsedBlur)
+                .scaleEffect(isExpanded ? 1 : motion.collapsedScale, anchor: .top)
+                .offset(y: isExpanded ? 0 : motion.collapsedOffsetY)
+                .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
         .overlay(alignment: .topTrailing) {
             SettingsOrbButton(action: onSettingsTapped)
                 .padding(.top, 18)
                 .padding(.trailing, 20)
                 .opacity(isExpanded ? 1 : 0)
-                .scaleEffect(isExpanded ? 1 : 0.85, anchor: .topTrailing)
+                .scaleEffect(isExpanded ? 1 : motion.accessoryCollapsedScale, anchor: .topTrailing)
                 .allowsHitTesting(isExpanded)
-                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
+                .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
         .overlay(alignment: .bottom) {
             if let joinURL = progressModel.snapshot.joinURL {
@@ -44,19 +46,20 @@ struct NotchPanelView: View {
                 }
                 .padding(.bottom, 16)
                 .opacity(isExpanded ? 1 : 0)
-                .scaleEffect(isExpanded ? 1 : 0.85, anchor: .bottom)
+                .scaleEffect(isExpanded ? 1 : motion.accessoryCollapsedScale, anchor: .bottom)
                 .allowsHitTesting(isExpanded)
-                .animation(.easeOut(duration: 0.16).delay(isExpanded ? 0.08 : 0), value: isExpanded)
+                .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
             }
         }
         .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight, alignment: .top)
         .compositingGroup()
-        .animation(.interactiveSpring(response: 0.42, dampingFraction: 0.86, blendDuration: 0.18), value: isExpanded)
+        .animation(motion.containerAnimation, value: isExpanded)
     }
 }
 
 struct NotchContentView: View {
     @ObservedObject var progressModel: EventProgressModel
+    let shimmerEnabled: Bool
 
     var body: some View {
         let snapshot = progressModel.snapshot
@@ -64,7 +67,10 @@ struct NotchContentView: View {
         Group {
             switch snapshot.state {
             case .inProgress:
-                InProgressContent(snapshot: snapshot, isVisible: progressModel.isHoverVisible)
+                InProgressContent(
+                    snapshot: snapshot,
+                    isAnimating: progressModel.isHoverVisible && shimmerEnabled
+                )
             case .startingSoon, .upcomingToday, .upcomingLater, .emptyToday, .noCalendar, .accessRevoked:
                 SecondaryContent(message: snapshot.secondaryMessage ?? "")
             }
@@ -79,7 +85,7 @@ struct NotchContentView: View {
 
 private struct InProgressContent: View {
     let snapshot: EventProgressSnapshot
-    let isVisible: Bool
+    let isAnimating: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -95,7 +101,7 @@ private struct InProgressContent: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint, isAnimating: isVisible)
+                AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint, isAnimating: isAnimating)
                 .frame(maxWidth: .infinity)
                 .frame(height: 13)
 
