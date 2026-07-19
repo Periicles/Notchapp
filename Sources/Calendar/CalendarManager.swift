@@ -50,9 +50,13 @@ final class CalendarManager: ObservableObject {
     /// Reconcile the cached authorization with the system's. Handles both a grant
     /// after launch (loads calendars, starts polling) and a revocation while running
     /// (stops polling, clears events so the notch shows the access-off state).
-    func reevaluateAuthorizationIfNeeded(using preferences: Preferences) async {
+    ///
+    /// Returns `true` when it performed the granted reload (calendars + events),
+    /// so a caller reacting to the same trigger can skip re-fetching.
+    @discardableResult
+    func reevaluateAuthorizationIfNeeded(using preferences: Preferences) async -> Bool {
         let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
-        guard latest != authorizationState else { return }
+        guard latest != authorizationState else { return false }
 
         let wasGranted = authorizationState == .granted
         authorizationState = latest
@@ -64,12 +68,14 @@ final class CalendarManager: ObservableObject {
             preferences.ensureDefaultSelection(using: availableCalendars, store: store)
             await refreshEvents(using: preferences)
             startPolling(preferences: preferences)
+            return true
         case .denied, .insufficient:
             if wasGranted {
                 stopPollingAndClearEvents()
             }
+            return false
         case .unknown:
-            break
+            return false
         }
     }
 
@@ -149,8 +155,10 @@ final class CalendarManager: ObservableObject {
     }
 
     private func handleStoreChanged(using preferences: Preferences) async {
-        await reevaluateAuthorizationIfNeeded(using: preferences)
-        guard authorizationState == .granted else { return }
+        // A grant transition here already reloads calendars + events; only do the
+        // data-change refresh below when authorization was steady (the common case).
+        let reloadedOnGrant = await reevaluateAuthorizationIfNeeded(using: preferences)
+        guard authorizationState == .granted, !reloadedOnGrant else { return }
         availableCalendars = store.calendars(for: .event)
         let resolved = Preferences.resolveSelection(
             current: preferences.selectedCalendarIdentifiers,
