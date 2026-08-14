@@ -27,11 +27,11 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 
 ```
 Sources/
-├── NotchBarApp.swift              # @main + AppDelegate
-├── NotchPanel/                    # NSPanel windows, hover tracking, SwiftUI rendering
-├── Calendar/                      # EventKit access + event snapshot model
+├── NotchBarApp.swift              # @main + AppDelegate + the menu-bar status item
+├── NotchPanel/                    # NSPanel windows, hover tracking, SwiftUI rendering, motion style
+├── Calendar/                      # EventKit access, snapshot model, meeting links, notifications
 ├── Settings/                      # UserDefaults-backed preferences + settings UI
-├── Utilities/                     # ScreenHelper (notch geometry) + Localized helper
+├── Utilities/                     # ScreenHelper (notch geometry), Localized helper, os.Logger categories
 └── Resources/                     # en.lproj/ + fr.lproj/ Localizable.strings, processed natively by SwiftPM
 Tests/
 └── NotchBarTests/                 # XCTest target (@testable import NotchBar)
@@ -50,8 +50,8 @@ Swift Package Manager is the sole build system. This keeps builds fully reproduc
 **`NSPanel` over `NSWindow`**
 The notch overlay is an `NSPanel` configured as `borderless` + `nonactivatingPanel`. This combination keeps the panel visible at the correct screen layer without stealing keyboard focus from the active app.
 
-**Six-state snapshot model**
-`EventProgressModel` holds an `EventProgressSnapshot` — an immutable, `Equatable` value derived from live EventKit data. `CalendarManager` computes the snapshot; the view renders whatever snapshot it receives. All conditional logic is isolated in `CalendarManager.computeSnapshot`, making each state independently testable without a running EventKit store.
+**Seven-state snapshot model**
+`EventProgressModel` holds an `EventProgressSnapshot` — an immutable, `Equatable` value derived from live EventKit data. `CalendarManager` maps EventKit into plain `CalendarEvent` values; `SnapshotBuilder` turns those into a snapshot; the view renders whatever snapshot it receives. All conditional logic is isolated in `SnapshotBuilder.computeSnapshot`, making each state independently testable without a running EventKit store.
 
 **Data flow**
 ```
@@ -162,6 +162,7 @@ docs: document five-state model in README
 2. `swiftlint` — zero errors
 3. New non-trivial logic is covered by tests
 4. One concern per PR — avoid mixing features with refactors
+5. Add an entry under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) when behavior changes
 
 The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.
 
@@ -174,7 +175,7 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. Releases are currently marked **pre-release** and are ad-hoc signed (not notarized), so macOS shows the one-time "Open Anyway" step.
+The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. The `CFBundleShortVersionString` checked into `Supporting/Info.plist` is only a placeholder for local `swift run` builds; every packaged build overwrites it. Releases are currently marked **pre-release** and are ad-hoc signed (not notarized), so macOS shows the one-time "Open Anyway" step.
 
 **Enabling notarization (later).** Once an Apple Developer ID is available, add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`, then drop `--prerelease`:
 
