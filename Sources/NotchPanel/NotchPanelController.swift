@@ -181,6 +181,7 @@ final class NotchPanelController: NSObject {
         Task { @MainActor in
             await calendarManager.refreshEvents(using: preferences)
             progressModel.refreshSnapshot()
+            progressModel.syncIdleRefresh()
         }
     }
 

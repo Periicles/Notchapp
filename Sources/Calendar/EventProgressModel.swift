@@ -80,17 +80,45 @@ final class EventProgressModel: ObservableObject {
     @Published private(set) var isHoverVisible = false
 
     private var timerTask: Task<Void, Never>?
+    private var idleTask: Task<Void, Never>?
     private weak var calendarManager: CalendarManager?
     private weak var preferences: Preferences?
 
+    /// Compact countdown for the menu bar — the only surface that shows anything
+    /// while the panel is closed. `nil` hides it entirely.
+    var menuBarText: String? {
+        MenuBarLabel.text(for: snapshot, enabled: preferences?.showsMenuBarCountdown ?? false)
+    }
+
     deinit {
         timerTask?.cancel()
+        idleTask?.cancel()
     }
 
     func bind(to calendarManager: CalendarManager, preferences: Preferences) {
         self.calendarManager = calendarManager
         self.preferences = preferences
         refreshSnapshot()
+        syncIdleRefresh()
+    }
+
+    /// Start or stop the at-rest tick after anything that could change whether
+    /// the menu-bar countdown is displayed.
+    func syncIdleRefresh() {
+        idleTask?.cancel()
+        idleTask = nil
+
+        guard !isHoverVisible, preferences?.showsMenuBarCountdown == true else { return }
+
+        // Matches CalendarManager's polling cadence: the label can never be more
+        // than one calendar poll behind, and it rounds to the minute anyway.
+        idleTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard let self else { return }
+                self.refreshSnapshot()
+            }
+        }
     }
 
     /// The live 1s tick only runs while the panel is open. At rest the notch shows
@@ -107,7 +135,7 @@ final class EventProgressModel: ObservableObject {
         } else {
             stopTicking()
         }
-
+        syncIdleRefresh()
     }
 
     func refreshSnapshot() {
