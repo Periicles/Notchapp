@@ -1,4 +1,6 @@
+"%lld min" = "%lld min";
 "%lldh %lldmin" = "%lld h %lld min";
+"%lldh%@" = "%lld h %@";
 "%lldmin" = "%lld min";
 "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars." = "L'accès au calendrier est désactivé. Activez-le dans Réglages Système > Confidentialité et sécurité > Calendriers.";
 "Calendar access is off — re-enable in Settings" = "Accès au calendrier désactivé — réactivez-le dans les Réglages";
