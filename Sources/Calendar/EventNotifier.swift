@@ -1,5 +1,5 @@
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// Applies a `NotificationPlanner` plan to the system notification centre.
 ///
