@@ -22,6 +22,7 @@ final class SnapshotComputationTests: XCTestCase {
         relativeTo now: Date
     ) -> CalendarEvent {
         CalendarEvent(
+            identifier: "event-\(startOffset)",
             title: title,
             startDate: now.addingTimeInterval(startOffset),
             endDate: now.addingTimeInterval(startOffset + durationSeconds),
@@ -62,6 +63,34 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.title, "Standup")
         XCTAssertEqual(snapshot.progress, 300.0 / 1800.0, accuracy: 0.0001)
         XCTAssertNil(snapshot.secondaryMessage)
+    }
+
+    func test_inProgress_carriesRawRemainingSeconds() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(startOffset: -300, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en")
+        )
+
+        XCTAssertEqual(snapshot.remainingSeconds, 1500)
+    }
+
+    func test_remainingSeconds_isNilOutsideAnInProgressEvent() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(startOffset: 120, durationSeconds: 1800, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en")
+        )
+
+        XCTAssertEqual(snapshot.state, .startingSoon)
+        XCTAssertNil(snapshot.remainingSeconds)
+        XCTAssertNil(EventProgressSnapshot.emptyToday().remainingSeconds)
     }
 
     func test_inProgress_filtersByCalendarID() {

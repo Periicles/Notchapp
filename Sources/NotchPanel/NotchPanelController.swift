@@ -168,6 +168,14 @@ final class NotchPanelController: NSObject {
         // runtime toggle of the setting takes effect without relaunching.
         settingsPopover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
 
+        // The panel is a non-activating panel that cannot become key, so without
+        // this the popover comes up as an *inactive* window: switches render grey
+        // instead of accent-coloured and the translucent material samples whatever
+        // sits behind the notch, which reads as a broken dark theme. The first
+        // click then activates the app and everything recolours under the cursor.
+        // Opening settings is an explicit request, so coming forward is fair.
+        NSApp.activate()
+
         let anchorRect = NSRect(
             x: contentView.bounds.maxX - 52,
             y: contentView.bounds.maxY - 44,
@@ -181,6 +189,7 @@ final class NotchPanelController: NSObject {
         Task { @MainActor in
             await calendarManager.refreshEvents(using: preferences)
             progressModel.refreshSnapshot()
+            progressModel.syncIdleRefresh()
         }
     }
 
