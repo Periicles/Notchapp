@@ -22,12 +22,12 @@ struct NotchBarApp: App {
                     appDelegate.progressModel.refreshSnapshot()
                 }
             } label: {
-                Text("Refresh Events", bundle: .module)
+                Text("Refresh Events", bundle: Localized.resources)
             }
             Button {
                 NSApp.terminate(nil)
             } label: {
-                Text("Quit", bundle: .module)
+                Text("Quit", bundle: Localized.resources)
             }
         } label: {
             MenuBarStatusLabel(
@@ -53,7 +53,7 @@ struct MenuBarStatusLabel: View {
                 Text(countdown)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("Remaining", bundle: .module))
+            .accessibilityLabel(Text("Remaining", bundle: Localized.resources))
             .accessibilityValue(Text(countdown))
         } else {
             Image(systemName: "capsule.tophalf.filled")
