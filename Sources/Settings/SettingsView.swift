@@ -10,6 +10,12 @@ struct SettingsView: View {
 
     @State private var launchAtLoginEnabled = false
 
+    /// Width the scroller occupies, re-read on each render so the "always show
+    /// scroll bars" setting is honored without relaunching.
+    private static var scrollerInset: CGFloat {
+        NSScroller.scrollerWidth(for: .regular, scrollerStyle: NSScroller.preferredScrollerStyle) + 2
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("NotchBar")
@@ -42,24 +48,18 @@ struct SettingsView: View {
                             calendarRow(for: calendar)
                         }
                     }
+                    // Clears the scroller, which otherwise sits on top of the
+                    // right-aligned checkboxes when scroll bars are always shown.
+                    .padding(.trailing, Self.scrollerInset)
                 }
                 .frame(maxHeight: 220)
             }
 
-            Toggle(isOn: $preferences.showsMenuBarCountdown) {
-                Text("Show countdown in the menu bar", bundle: Localized.resources)
-            }
-                .toggleStyle(.switch)
+            settingRow("Show countdown in the menu bar", isOn: $preferences.showsMenuBarCountdown)
 
-            Toggle(isOn: $preferences.notifiesBeforeEvents) {
-                Text("Notify me 5 minutes before an event starts or ends", bundle: Localized.resources)
-            }
-                .toggleStyle(.switch)
+            settingRow("Notify me 5 minutes before an event starts or ends", isOn: $preferences.notifiesBeforeEvents)
 
-            Toggle(isOn: $launchAtLoginEnabled) {
-                Text("Launch at login", bundle: Localized.resources)
-            }
-                .toggleStyle(.switch)
+            settingRow("Launch at login", isOn: $launchAtLoginEnabled)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
                     setLaunchAtLogin(newValue)
                 }
@@ -95,6 +95,21 @@ struct SettingsView: View {
         }
     }
 
+    /// One settings line: label flush left, control flush right. A plain
+    /// `Toggle` sizes itself to its label, so rows with different label lengths
+    /// end up with their switches at different x positions.
+    private func settingRow(_ title: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 8) {
+            Text(title, bundle: Localized.resources)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Toggle("", isOn: isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
+        }
+    }
+
     private func calendarRow(for calendar: EKCalendar) -> some View {
         let isSelected = preferences.selectedCalendarIdentifiers.contains(calendar.calendarIdentifier)
         let dotColor = Color(nsColor: NSColor(cgColor: calendar.cgColor) ?? .controlAccentColor)
@@ -103,10 +118,6 @@ struct SettingsView: View {
             preferences.selectedCalendarIdentifiers.formSymmetricDifference([calendar.calendarIdentifier])
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                    .font(.system(size: 14))
-
                 Circle()
                     .fill(dotColor)
                     .frame(width: 8, height: 8)
@@ -115,7 +126,11 @@ struct SettingsView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.primary)
 
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
+
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .font(.system(size: 14))
             }
             .contentShape(Rectangle())
             .padding(.vertical, 2)
