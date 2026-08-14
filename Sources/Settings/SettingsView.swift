@@ -51,6 +51,11 @@ struct SettingsView: View {
             }
                 .toggleStyle(.switch)
 
+            Toggle(isOn: $preferences.notifiesBeforeEvents) {
+                Text("Notify me 5 minutes before an event starts or ends", bundle: .module)
+            }
+                .toggleStyle(.switch)
+
             Toggle(isOn: $launchAtLoginEnabled) {
                 Text("Launch at login", bundle: .module)
             }
@@ -83,6 +88,9 @@ struct SettingsView: View {
             onPreferencesChanged()
         }
         .onChange(of: preferences.showsMenuBarCountdown) { _, _ in
+            onPreferencesChanged()
+        }
+        .onChange(of: preferences.notifiesBeforeEvents) { _, _ in
             onPreferencesChanged()
         }
     }

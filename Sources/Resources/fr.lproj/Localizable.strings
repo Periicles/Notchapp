@@ -14,6 +14,7 @@
 "Next: %@ in %@" = "Prochain : %@ dans %@";
 "No event today" = "Aucun événement aujourd'hui";
 "NotchBar has write-only calendar access and cannot read your events. Switch it to Full Access in System Settings > Privacy & Security > Calendars." = "NotchBar a un accès en écriture seule et ne peut pas lire vos événements. Passez à l'accès complet dans Réglages Système > Confidentialité et sécurité > Calendriers.";
+"Notify me 5 minutes before an event starts or ends" = "Me prévenir 5 minutes avant le début ou la fin d'un événement";
 "Pick a calendar in Settings" = "Choisissez un calendrier dans les Réglages";
 "Quit NotchBar" = "Quitter NotchBar";
 "Quit" = "Quitter";

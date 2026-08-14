@@ -188,6 +188,23 @@ final class PreferencesTests: XCTestCase {
         XCTAssertFalse(Preferences(defaults: defaults).showsMenuBarCountdown)
     }
 
+    // MARK: - Event notifications toggle
+
+    func test_notifiesBeforeEvents_defaultsToOff_whenNeverSet() {
+        let prefs = Preferences(defaults: defaults)
+
+        XCTAssertFalse(prefs.notifiesBeforeEvents)
+    }
+
+    func test_setNotifiesBeforeEvents_persistsToDefaults() {
+        let prefs = Preferences(defaults: defaults)
+
+        prefs.notifiesBeforeEvents = true
+
+        XCTAssertEqual(defaults.object(forKey: "notifiesBeforeEvents") as? Bool, true)
+        XCTAssertTrue(Preferences(defaults: defaults).notifiesBeforeEvents)
+    }
+
     // MARK: - resolveSelection
 
     func test_resolveSelection_keepsCurrent_whenStillAvailable() {
