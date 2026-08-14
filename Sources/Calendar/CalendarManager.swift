@@ -17,8 +17,11 @@ final class CalendarManager: ObservableObject {
 
     @Published private(set) var authorizationState: AuthorizationState = .unknown
     @Published private(set) var availableCalendars: [EKCalendar] = []
-    @Published private(set) var currentEvent: EKEvent?
-    @Published private(set) var nextEvent: EKEvent?
+    /// The whole fetch window as plain values, sorted by start date. Kept in full
+    /// rather than narrowed to current/next at fetch time: the snapshot resolves
+    /// "what is running now" against a live `now`, so a truncated list goes stale
+    /// between polls as soon as one event ends and the following one starts.
+    @Published private(set) var events: [CalendarEvent] = []
 
     deinit {
         refreshTask?.cancel()
@@ -81,15 +84,14 @@ final class CalendarManager: ObservableObject {
 
     func refreshEvents(using preferences: Preferences) async {
         guard authorizationState == .granted else {
-            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
+            Log.calendar.debug("Refresh skipped: access not granted")
             return
         }
 
         let calendars = selectedCalendars(using: preferences)
         guard !calendars.isEmpty else {
-            currentEvent = nil
-            nextEvent = nil
-            Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
+            events = []
+            Log.calendar.debug("Refresh: no calendar tracked")
             return
         }
 
@@ -101,13 +103,22 @@ final class CalendarManager: ObservableObject {
             calendars: calendars
         )
 
-        let events = store.events(matching: predicate)
+        events = store.events(matching: predicate)
             .filter { !$0.isAllDay }
             .sorted { $0.startDate < $1.startDate }
+            .map(Self.makeEvent)
+        Log.calendar.debug("Refresh: \(self.events.count) events in window")
+    }
 
-        currentEvent = events.first(where: { $0.startDate <= now && $0.endDate > now })
-        nextEvent = events.first(where: { $0.startDate > now })
-        Log.calendar.debug("Refresh: current=\(self.currentEvent != nil), next=\(self.nextEvent != nil)")
+    private static func makeEvent(from event: EKEvent) -> CalendarEvent {
+        CalendarEvent(
+            title: event.title ?? "",
+            startDate: event.startDate,
+            endDate: event.endDate,
+            calendarIdentifier: event.calendar.calendarIdentifier,
+            color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor),
+            joinURL: MeetingLinkDetector.detect(url: event.url, location: event.location, notes: event.notes)
+        )
     }
 
     func selectedCalendars(using preferences: Preferences) -> [EKCalendar] {
@@ -115,19 +126,8 @@ final class CalendarManager: ObservableObject {
     }
 
     func currentSnapshot(selectedCalendarIDs: Set<String>, now: Date = .now) -> EventProgressSnapshot {
-        let inputs = ([currentEvent, nextEvent].compactMap { $0 }).map { event -> CalendarEvent in
-            CalendarEvent(
-                title: event.title ?? "",
-                startDate: event.startDate,
-                endDate: event.endDate,
-                calendarIdentifier: event.calendar.calendarIdentifier,
-                color: Color(nsColor: NSColor(cgColor: event.calendar.cgColor) ?? .controlAccentColor),
-                joinURL: MeetingLinkDetector.detect(url: event.url, location: event.location, notes: event.notes)
-            )
-        }
-
-        return SnapshotBuilder.computeSnapshot(
-            events: inputs,
+        SnapshotBuilder.computeSnapshot(
+            events: events,
             selectedCalendarIDs: selectedCalendarIDs,
             now: now,
             calendar: .current
@@ -149,8 +149,7 @@ final class CalendarManager: ObservableObject {
     private func stopPollingAndClearEvents() {
         refreshTask?.cancel()
         refreshTask = nil
-        currentEvent = nil
-        nextEvent = nil
+        events = []
         Log.calendar.info("Polling stopped: calendar access lost")
     }
 
