@@ -6,6 +6,7 @@
 "Calendar access is off — re-enable in Settings" = "Accès au calendrier désactivé — réactivez-le dans les Réglages";
 "Current Meeting" = "Réunion en cours";
 "Elapsed" = "Écoulé";
+"Ends in %lld min" = "Se termine dans %lld min";
 "In progress" = "En cours";
 "Join" = "Rejoindre";
 "Launch at login" = "Ouvrir à la connexion";
@@ -14,15 +15,16 @@
 "No event today" = "Aucun événement aujourd'hui";
 "NotchBar has write-only calendar access and cannot read your events. Switch it to Full Access in System Settings > Privacy & Security > Calendars." = "NotchBar a un accès en écriture seule et ne peut pas lire vos événements. Passez à l'accès complet dans Réglages Système > Confidentialité et sécurité > Calendriers.";
 "Pick a calendar in Settings" = "Choisissez un calendrier dans les Réglages";
-"Quit" = "Quitter";
 "Quit NotchBar" = "Quitter NotchBar";
+"Quit" = "Quitter";
 "Refresh Events" = "Actualiser les événements";
 "Remaining" = "Restant";
 "Show countdown in the menu bar" = "Afficher le compte à rebours dans la barre de menus";
+"Starts in %lld min" = "Commence dans %lld min";
 "Starts in %lldm — %@" = "Commence dans %lld min — %@";
 "Starts now — %@" = "Commence maintenant — %@";
 "Starts soon" = "Commence bientôt";
 "Tracked Calendars" = "Calendriers suivis";
-"Upcoming" = "À venir";
 "Upcoming Meeting" = "Réunion à venir";
 "Upcoming today" = "À venir aujourd'hui";
+"Upcoming" = "À venir";
