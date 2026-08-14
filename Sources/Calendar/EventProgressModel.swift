@@ -23,6 +23,10 @@ struct EventProgressSnapshot: Equatable {
     let tint: Color
     let state: State
     var joinURL: URL?
+    /// Raw seconds left on the running event — the unformatted datum callers that
+    /// need their own presentation (the menu-bar countdown) build from. `nil`
+    /// whenever no event is in progress.
+    var remainingSeconds: Int?
 
     static func noCalendar(locale: Locale = .current) -> EventProgressSnapshot {
         EventProgressSnapshot(
@@ -103,6 +107,7 @@ final class EventProgressModel: ObservableObject {
         } else {
             stopTicking()
         }
+
     }
 
     func refreshSnapshot() {

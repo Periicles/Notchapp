@@ -91,7 +91,8 @@ enum SnapshotBuilder {
             secondaryMessage: nil,
             tint: event.color,
             state: .inProgress,
-            joinURL: event.joinURL
+            joinURL: event.joinURL,
+            remainingSeconds: remainingSeconds
         )
     }
 
