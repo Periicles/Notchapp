@@ -18,6 +18,7 @@
 "Quit NotchBar" = "Quit NotchBar";
 "Refresh Events" = "Refresh Events";
 "Remaining" = "Remaining";
+"Show countdown in the menu bar" = "Show countdown in the menu bar";
 "Starts in %lldm — %@" = "Starts in %lldm — %@";
 "Starts now — %@" = "Starts now — %@";
 "Starts soon" = "Starts soon";

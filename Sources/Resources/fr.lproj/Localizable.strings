@@ -18,6 +18,7 @@
 "Quit NotchBar" = "Quitter NotchBar";
 "Refresh Events" = "Actualiser les événements";
 "Remaining" = "Restant";
+"Show countdown in the menu bar" = "Afficher le compte à rebours dans la barre de menus";
 "Starts in %lldm — %@" = "Commence dans %lld min — %@";
 "Starts now — %@" = "Commence maintenant — %@";
 "Starts soon" = "Commence bientôt";
