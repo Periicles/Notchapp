@@ -8,7 +8,8 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - If a tracked calendar is deleted or unshared, NotchBar won't auto-pick a replacement — reselect one in Settings.
 - English and French, following the system language.
 - Respects **Reduce Motion**: with it on, the panel crossfades in place — no scale, offset or spring — and the progress bar's shimmer is frozen.
-- At rest NotchBar draws nothing — the physical notch shows through untouched (so it never slides with the desktop during Space switches), and no information leaks until you hover.
+- At rest NotchBar draws nothing in the notch — the physical notch shows through untouched (so it never slides with the desktop during Space switches).
+- **Menu-bar countdown** (on by default, toggle in Settings): while an event is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
 - On hover, the panel expands and shows one of seven contextual states, computed across the events of every tracked calendar:
 
 | State | Trigger | Shown |
@@ -58,7 +59,7 @@ EventKit → CalendarManager → EventProgressSnapshot → NotchPanelView
 `CalendarManager` owns `EKEventStore`, publishes `currentEvent` / `nextEvent`, and polls every 30s (plus reacts to `EKEventStoreChanged`). If Calendar access is granted after launch — e.g. from System Settings, without restarting NotchBar — the store-changed notification and each panel open re-check authorization and pick up the change automatically. `NotchPanelView` observes `EventProgressModel` via `@ObservedObject`.
 
 **Idle-first performance**
-At rest the notch shows nothing from the snapshot, so NotchBar does no live work while collapsed: the 1-second refresh tick and the 60fps progress-bar shimmer both run **only while the panel is open** (hover). Snapshots are `Equatable`, so redundant recomputes never trigger a SwiftUI invalidation. Result: ~0% CPU when collapsed, even during an in-progress event.
+The 1-second refresh tick and the 60fps progress-bar shimmer run **only while the panel is open** (hover). While collapsed, the only live work is the menu-bar countdown's tick — one snapshot recompute every 30 seconds, matching `CalendarManager`'s polling cadence, and only while the toggle is on. Turn the countdown off and NotchBar does no live work at all when collapsed. Snapshots are `Equatable`, so redundant recomputes never trigger a SwiftUI invalidation.
 
 **`LSUIElement`**
 Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app switcher. NotchBar runs as a pure background UI layer with no Dock presence.
