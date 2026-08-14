@@ -22,6 +22,7 @@ final class SnapshotComputationTests: XCTestCase {
         relativeTo now: Date
     ) -> CalendarEvent {
         CalendarEvent(
+            identifier: "event-\(startOffset)",
             title: title,
             startDate: now.addingTimeInterval(startOffset),
             endDate: now.addingTimeInterval(startOffset + durationSeconds),

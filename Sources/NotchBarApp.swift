@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @main
@@ -67,7 +68,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let calendarManager = CalendarManager()
     let progressModel = EventProgressModel()
 
+    private let notifier = EventNotifier()
     private var panelController: NotchPanelController?
+    private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -77,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: preferences
         )
         progressModel.bind(to: calendarManager, preferences: preferences)
+        observeEventsForNotifications()
 
         Task {
             await calendarManager.bootstrap(using: preferences)
@@ -89,6 +93,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await calendarManager.refreshEvents(using: preferences)
             progressModel.refreshSnapshot()
             progressModel.syncIdleRefresh()
+            // The window may be identical — a toggle change alone still has to
+            // reach the notifier, which the events publisher would not report.
+            await notifier.sync(events: calendarManager.events, preferences: preferences)
         }
+    }
+
+    /// Every refreshed window is republished, so notifications follow the
+    /// calendar without the manager knowing anything about them.
+    private func observeEventsForNotifications() {
+        calendarManager.$events
+            .sink { events in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    await self.notifier.sync(events: events, preferences: self.preferences)
+                }
+            }
+            .store(in: &cancellables)
     }
 }

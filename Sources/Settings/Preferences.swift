@@ -7,6 +7,7 @@ final class Preferences: ObservableObject {
     private enum Keys {
         static let selectedCalendarIdentifiers = "selectedCalendarIdentifiers"
         static let showsMenuBarCountdown = "showsMenuBarCountdown"
+        static let notifiesBeforeEvents = "notifiesBeforeEvents"
         static let legacySingleIdentifier = "selectedCalendarIdentifier"
         static let legacySelectedCalendarIDs = "selectedCalendarIDs"
         static let legacyShowsNoMeetingState = "showsNoMeetingState"
@@ -28,6 +29,15 @@ final class Preferences: ObservableObject {
         }
     }
 
+    /// Off by default: turning it on triggers the system notification prompt, so
+    /// it has to be a deliberate choice rather than something the app assumes.
+    @Published var notifiesBeforeEvents: Bool {
+        didSet {
+            defaults.set(notifiesBeforeEvents, forKey: Keys.notifiesBeforeEvents)
+            Log.preferences.debug("Event notifications \(self.notifiesBeforeEvents ? "on" : "off", privacy: .public)")
+        }
+    }
+
     var hasStoredSelection: Bool {
         defaults.object(forKey: Keys.selectedCalendarIdentifiers) != nil
     }
@@ -41,6 +51,7 @@ final class Preferences: ObservableObject {
 
         self.selectedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.selectedCalendarIdentifiers) ?? [])
         self.showsMenuBarCountdown = Self.bool(in: defaults, forKey: Keys.showsMenuBarCountdown, default: true)
+        self.notifiesBeforeEvents = Self.bool(in: defaults, forKey: Keys.notifiesBeforeEvents, default: false)
     }
 
     /// `UserDefaults.bool(forKey:)` cannot distinguish "stored false" from

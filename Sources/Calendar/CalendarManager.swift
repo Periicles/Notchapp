@@ -112,6 +112,7 @@ final class CalendarManager: ObservableObject {
 
     private static func makeEvent(from event: EKEvent) -> CalendarEvent {
         CalendarEvent(
+            identifier: event.eventIdentifier ?? "",
             title: event.title ?? "",
             startDate: event.startDate,
             endDate: event.endDate,

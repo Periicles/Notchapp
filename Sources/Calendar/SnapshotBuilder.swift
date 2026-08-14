@@ -167,6 +167,9 @@ enum SnapshotBuilder {
 }
 
 struct CalendarEvent: Equatable {
+    /// EventKit's event identifier. Every instance of a recurring event shares
+    /// it, so anything keying off an occurrence must pair it with `startDate`.
+    let identifier: String
     let title: String
     let startDate: Date
     let endDate: Date
