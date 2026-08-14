@@ -95,11 +95,10 @@ final class CalendarManager: ObservableObject {
             return
         }
 
-        let now = Date()
-        let endOfWindow = now.addingTimeInterval(7 * 86400)
+        let window = Self.fetchWindow(around: Date())
         let predicate = store.predicateForEvents(
-            withStart: now.addingTimeInterval(-8 * 3600),
-            end: endOfWindow,
+            withStart: window.start,
+            end: window.end,
             calendars: calendars
         )
 
@@ -108,6 +107,13 @@ final class CalendarManager: ObservableObject {
             .sorted { $0.startDate < $1.startDate }
             .map(Self.makeEvent)
         Log.calendar.debug("Refresh: \(self.events.count) events in window")
+    }
+
+    /// The look-back has to cover the longest event that can still be running:
+    /// an 8-hour reach missed a workshop or a shift that started this morning
+    /// and left the notch showing the *next* event instead of the current one.
+    nonisolated static func fetchWindow(around now: Date) -> (start: Date, end: Date) {
+        (start: now.addingTimeInterval(-24 * 3600), end: now.addingTimeInterval(7 * 86400))
     }
 
     private static func makeEvent(from event: EKEvent) -> CalendarEvent {
