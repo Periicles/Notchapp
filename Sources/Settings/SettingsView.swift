@@ -46,6 +46,11 @@ struct SettingsView: View {
                 .frame(maxHeight: 220)
             }
 
+            Toggle(isOn: $preferences.showsMenuBarCountdown) {
+                Text("Show countdown in the menu bar", bundle: .module)
+            }
+                .toggleStyle(.switch)
+
             Toggle(isOn: $launchAtLoginEnabled) {
                 Text("Launch at login", bundle: .module)
             }
@@ -75,6 +80,9 @@ struct SettingsView: View {
         .padding(14)
         .frame(width: 320)
         .onChange(of: preferences.selectedCalendarIdentifiers) { _, _ in
+            onPreferencesChanged()
+        }
+        .onChange(of: preferences.showsMenuBarCountdown) { _, _ in
             onPreferencesChanged()
         }
     }
