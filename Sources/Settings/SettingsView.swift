@@ -18,7 +18,7 @@ struct SettingsView: View {
             if calendarManager.authorizationState == .denied {
                 Text(
                     "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.",
-                    bundle: .module
+                    bundle: Localized.resources
                 )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -28,12 +28,12 @@ struct SettingsView: View {
                     NotchBar has write-only calendar access and cannot read your events. \
                     Switch it to Full Access in System Settings > Privacy & Security > Calendars.
                     """,
-                    bundle: .module
+                    bundle: Localized.resources
                 )
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Tracked Calendars", bundle: .module)
+                Text("Tracked Calendars", bundle: Localized.resources)
                     .font(.subheadline.weight(.semibold))
 
                 ScrollView {
@@ -47,17 +47,17 @@ struct SettingsView: View {
             }
 
             Toggle(isOn: $preferences.showsMenuBarCountdown) {
-                Text("Show countdown in the menu bar", bundle: .module)
+                Text("Show countdown in the menu bar", bundle: Localized.resources)
             }
                 .toggleStyle(.switch)
 
             Toggle(isOn: $preferences.notifiesBeforeEvents) {
-                Text("Notify me 5 minutes before an event starts or ends", bundle: .module)
+                Text("Notify me 5 minutes before an event starts or ends", bundle: Localized.resources)
             }
                 .toggleStyle(.switch)
 
             Toggle(isOn: $launchAtLoginEnabled) {
-                Text("Launch at login", bundle: .module)
+                Text("Launch at login", bundle: Localized.resources)
             }
                 .toggleStyle(.switch)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
@@ -75,7 +75,7 @@ struct SettingsView: View {
                 Button {
                     NSApplication.shared.terminate(nil)
                 } label: {
-                    Text("Quit NotchBar", bundle: .module)
+                    Text("Quit NotchBar", bundle: Localized.resources)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 12))

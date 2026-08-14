@@ -76,7 +76,7 @@ struct MetricLabel: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            Text(titleKey, bundle: .module)
+            Text(titleKey, bundle: Localized.resources)
                 .foregroundStyle(.white.opacity(0.42))
             Text(value.isEmpty ? "--:--:--" : value)
                 .monospacedDigit()
@@ -183,7 +183,7 @@ struct JoinButton: View {
             HStack(spacing: 6) {
                 Image(systemName: "video.fill")
                     .font(.system(size: 12, weight: .bold))
-                Text("Join", bundle: .module)
+                Text("Join", bundle: Localized.resources)
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(.white)

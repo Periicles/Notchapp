@@ -18,6 +18,14 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The packaged app crashed at launch on any machine but the one that built
+  it.** SwiftPM's `Bundle.module` looks for the resource bundle beside
+  `Bundle.main`'s bundle URL — the `.app` itself, not `Contents/Resources`
+  where it is packaged — and otherwise falls back to the absolute `.build`
+  path baked in at compile time. Localized strings resolved by accident on the
+  developer's machine and trapped everywhere else. Present since localization
+  shipped in 0.2.0, so **0.2.0's `.dmg` is affected**. Resources now resolve
+  from the app bundle, and `package.sh` fails if they are missing.
 - An event that started more than 8 hours ago and is still running was invisible
   to the fetch predicate, so the panel showed the next event instead of the
   current one. The look-back is now 24 hours.
