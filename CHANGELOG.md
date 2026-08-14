@@ -26,6 +26,13 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   developer's machine and trapped everywhere else. Present since localization
   shipped in 0.2.0, so **0.2.0's `.dmg` is affected**. Resources now resolve
   from the app bundle, and `package.sh` fails if they are missing.
+- The notch's settings menu opened as an *inactive* window: switches rendered
+  grey instead of accent-coloured and the translucent material sampled whatever
+  sat behind the notch, so it read as a broken dark theme until the first click
+  recoloured everything. The panel is a non-activating panel that cannot become
+  key, so opening the menu now brings the app forward.
+- Settings rows now put the label flush left and the control flush right, and
+  the calendar checkboxes clear the scroller instead of sitting under it.
 - An event that started more than 8 hours ago and is still running was invisible
   to the fetch predicate, so the panel showed the next event instead of the
   current one. The look-back is now 24 hours.
