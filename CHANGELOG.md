@@ -1,0 +1,77 @@
+# Changelog
+
+All notable changes to NotchBar are documented here.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
+NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- **Menu-bar countdown** (on by default): the time left on the running event
+  shows next to the menu-bar icon — `23 min`, then `1h00` past the hour. It is
+  the first NotchBar surface VoiceOver can reach; the panel is hover-only.
+- **Event notifications** (off by default): a notification 5 minutes before a
+  tracked event starts and 5 minutes before it ends. Turning the toggle on is
+  what asks macOS for permission.
+
+### Fixed
+
+- An event that started more than 8 hours ago and is still running was invisible
+  to the fetch predicate, so the panel showed the next event instead of the
+  current one. The look-back is now 24 hours.
+- The panel could show a stale state between polls: the manager kept only the
+  current and next event, resolved at fetch time, so once one event ended and
+  the one after next began, neither was the right answer. The whole fetched
+  window is kept now.
+- The `EKEventStoreChanged` observer was registered block-based and its token
+  discarded, so `removeObserver(self)` never unregistered it.
+- The 30s calendar poll ran on behind a sleeping display. It pauses on screen
+  sleep and catches up with one refresh on wake.
+
+### Changed
+
+- SwiftLint is pinned in CI. `brew install swiftlint` tracked latest, so a new
+  default rule could turn CI — and a release build — red with no code change.
+- `MeetingLinkDetector`'s link scan ran on every 1s panel tick; it now runs once
+  per calendar fetch.
+
+## [0.2.0] - 2026-07-13
+
+### Added
+
+- Release workflow triggered by a `v*` tag, with the version injected from the
+  tag at build time.
+- French localization, following the system language.
+- **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex).
+- Multiple tracked calendars, with migration from the single-calendar setting.
+- Reduce Motion support: the panel crossfades in place and the progress bar's
+  shimmer freezes.
+- `os.Logger` categories (calendar, panel, preferences). Event titles are never
+  logged.
+- Quit button in the settings panel.
+
+### Fixed
+
+- Calendar access recovers after launch: granting it in System Settings no
+  longer needs a restart, and revoking it while running is detected.
+- Write-only calendar access is reported as insufficient instead of being
+  treated as granted — it cannot read events.
+- `NSCalendarsFullAccessUsageDescription` added; macOS 14+ requires it for
+  `requestFullAccessToEvents()`.
+- The notch renders nothing at rest, so it no longer slides with the desktop
+  during a Space switch.
+
+## [0.1.0] - 2026-07-04
+
+First public pre-release.
+
+### Added
+
+- Hover-expanded notch panel with live progress on the current calendar event.
+- Calendar selection, launch at login, `.dmg` packaging and a landing page.
+
+[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Periicles/Notchapp/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Periicles/Notchapp/releases/tag/v0.1.0

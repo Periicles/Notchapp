@@ -14,8 +14,6 @@ jobs:
     runs-on: macos-15
     env:
       DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
-      # Runners preinstall untrusted taps; skip the trust prompt.
-      HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
     steps:
       - uses: actions/checkout@v5
         with:
@@ -29,7 +27,15 @@ jobs:
           echo "Releasing NotchBar $version (build $GITHUB_RUN_NUMBER) from tag $GITHUB_REF_NAME"
 
       - name: Install SwiftLint
-        run: brew install swiftlint
+        env:
+          # Pinned: `brew install swiftlint` tracks latest, so a new default rule
+          # can turn CI — and a release build — red with no code change.
+          SWIFTLINT_VERSION: 0.65.0
+        run: |
+          curl -sSLf -o swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          unzip -q swiftlint.zip -d "$RUNNER_TEMP/swiftlint"
+          echo "$RUNNER_TEMP/swiftlint" >> "$GITHUB_PATH"
 
       - name: Lint
         run: swiftlint
