@@ -47,6 +47,15 @@ if [ -n "$BUILD_NUMBER" ]; then
   /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$CONTENTS/Info.plist"
 fi
 
+echo "==> Verifying the app can find its resources"
+# The app resolves localized strings from Contents/Resources. When this bundle
+# is missing, every string silently degrades to its key — or the app traps at
+# launch if anything still reaches for SwiftPM's Bundle.module.
+for lproj in en fr; do
+  test -f "$CONTENTS/Resources/${APP_NAME}_${APP_NAME}.bundle/$lproj.lproj/Localizable.strings" \
+    || { echo "error: $lproj.lproj missing from the packaged resource bundle" >&2; exit 1; }
+done
+
 echo "==> Ad-hoc signing (applies sandbox entitlements)"
 codesign --force --sign - --options runtime \
   --entitlements "Supporting/$APP_NAME.entitlements" "$APP"
