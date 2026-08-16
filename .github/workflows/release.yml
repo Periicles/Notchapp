@@ -49,15 +49,16 @@ jobs:
       - name: Package .dmg
         run: scripts/package.sh "${{ steps.version.outputs.version }}" "$GITHUB_RUN_NUMBER"
 
-      # --- Notarization (not enabled yet) ---
-      # Once an Apple Developer ID is available, before "Package .dmg" import the
-      # Developer ID cert into a temp keychain from secrets MACOS_CERT_P12_BASE64 /
-      # MACOS_CERT_PASSWORD and replace `--sign -` in scripts/package.sh with the
-      # identity. Then after "Package .dmg" add:
+      # --- Notarization (not planned) ---
+      # NotchBar ships ad-hoc signed. Notarization needs a paid Apple Developer
+      # ID and is not on the roadmap; releases are stable regardless. Should one
+      # ever exist: before "Package .dmg" import the Developer ID cert into a
+      # temp keychain from secrets MACOS_CERT_P12_BASE64 / MACOS_CERT_PASSWORD,
+      # replace `--sign -` in scripts/package.sh with the identity, then after
+      # "Package .dmg" add:
       #   xcrun notarytool submit dist/NotchBar.dmg --apple-id "$APPLE_ID" \
       #     --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
       #   xcrun stapler staple dist/NotchBar.dmg
-      # and drop --prerelease from the release step below.
 
       - name: Publish GitHub release
         env:
@@ -66,5 +67,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             dist/NotchBar.dmg \
             --title "NotchBar $GITHUB_REF_NAME" \
-            --generate-notes \
-            --prerelease
+            --generate-notes
