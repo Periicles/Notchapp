@@ -148,6 +148,26 @@ swiftlint
 
 The CI pipeline runs `swiftlint` on every PR. Fix all errors before pushing.
 
+**Refreshing the landing page screenshot**
+
+`docs/assets/hero.png` is the shot at the top of the [website](https://periicles.github.io/Notchapp/). Until it exists the page falls back to a CSS mockup, so the site is never broken by a missing file.
+
+Run NotchBar, open a calendar event so the panel shows the **in progress** state — title, times and progress bar, which is the whole point of the shot — then:
+
+```sh
+scripts/capture-hero.sh            # counts down, then captures; hover the notch and hold
+```
+
+The crop region is read from the panel's real window, so it cannot drift from the app's geometry.
+
+Direct capture needs Screen Recording permission for your terminal. Without it `screencapture` fails with *could not create image from rect* — take a full-screen shot instead (**⌘⇧5 → Options → Timer**, so the panel stays open while it fires) and crop that, which needs no permission:
+
+```sh
+scripts/capture-hero.sh --from ~/Desktop/Screenshot*.png
+```
+
+Check what you are about to publish: the shot includes the menu bar on either side of the notch, and the panel shows real event titles.
+
 ## Contributing
 
 **Branch naming**
