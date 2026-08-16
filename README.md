@@ -67,7 +67,9 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 ## Installation
 
-### Homebrew (recommended if you use the CLI)
+NotchBar is ad-hoc signed, not Apple-notarized — notarization needs a paid Apple Developer ID and is not planned. That only matters for **downloads made by a browser**, which macOS tags with a quarantine flag Gatekeeper then refuses. The two command-line routes below never set that flag, so they install and launch with no prompt at all.
+
+### Homebrew (recommended)
 
 ```sh
 brew tap periicles/tap
@@ -75,16 +77,27 @@ brew trust periicles/tap          # third-party casks need an explicit trust (Ho
 brew install --cask --no-quarantine notchbar
 ```
 
-`--no-quarantine` skips Gatekeeper so NotchBar launches directly — needed until it's Apple-notarized. Update with `brew upgrade --cask notchbar`; remove with `brew uninstall --cask notchbar` (add `--zap` to also delete its data).
+`--no-quarantine` is what skips the Gatekeeper prompt. Update with `brew upgrade --cask notchbar`; remove with `brew uninstall --cask notchbar` (add `--zap` to also delete its data).
+
+### One command, without Homebrew
+
+```sh
+curl -fsSL -o /tmp/NotchBar.dmg https://github.com/Periicles/Notchapp/releases/latest/download/NotchBar.dmg &&
+hdiutil attach -quiet -nobrowse -mountpoint /tmp/NotchBar.mount /tmp/NotchBar.dmg &&
+cp -R /tmp/NotchBar.mount/NotchBar.app /Applications/ &&
+hdiutil detach -quiet /tmp/NotchBar.mount && rm /tmp/NotchBar.dmg
+```
+
+Nothing is piped into a shell — every step is visible above. `curl` does not set the quarantine flag, so the app opens with a normal double-click afterwards.
 
 ### Manual (`.dmg`)
 
-1. Grab it from the [NotchBar website](https://periicles.github.io/Notchapp/), or download the latest `NotchBar.dmg` from the [Releases](https://github.com/Periicles/Notchapp/releases) page.
+1. Download [NotchBar.dmg](https://github.com/Periicles/Notchapp/releases/latest/download/NotchBar.dmg), or get it from the [NotchBar website](https://periicles.github.io/Notchapp/).
 2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
-3. Open NotchBar. The first time, macOS blocks it because the app isn't notarized yet.
+3. Open NotchBar. The first time, macOS blocks it — expected for an unsigned app downloaded through a browser.
 4. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**, then confirm.
 
-> **Why the extra step?** macOS blocks it only because NotchBar isn't notarized by Apple yet — it's safe, just unsigned. You do this once; afterwards it opens with a normal double-click. (Notarization is on the roadmap.)
+> **Why the extra step?** The app is unsigned, so Gatekeeper rejects the quarantine flag your browser attached to the download. You do this once; afterwards it opens with a normal double-click. Either command-line route above avoids the step entirely.
 
 On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose which calendars to track.
 
@@ -171,13 +184,13 @@ The CI pipeline (lint → build → test) runs automatically on every PR. A PR c
 Releases are cut by pushing a tag. A GitHub Actions workflow (`.github/workflows/release.yml`) then lints, builds, tests, packages the `.dmg`, and publishes a GitHub Release automatically.
 
 ```sh
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
-The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. The `CFBundleShortVersionString` checked into `Supporting/Info.plist` is only a placeholder for local `swift run` builds; every packaged build overwrites it. Releases are currently marked **pre-release** and are ad-hoc signed (not notarized), so macOS shows the one-time "Open Anyway" step.
+The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. The `CFBundleShortVersionString` checked into `Supporting/Info.plist` is only a placeholder for local `swift run` builds; every packaged build overwrites it. Releases are published as stable, which is what keeps `/releases/latest/download/NotchBar.dmg` resolving — that URL skips pre-releases.
 
-**Enabling notarization (later).** Once an Apple Developer ID is available, add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`, then drop `--prerelease`:
+**Notarization is not planned** — it needs a paid Apple Developer ID, and the command-line install routes already avoid the Gatekeeper prompt. Kept here in case that ever changes: add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`.
 
 | Secret | For |
 |---|---|
