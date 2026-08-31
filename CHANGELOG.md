@@ -5,7 +5,7 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.3] - 2026-08-31
 
 ### Fixed
 
@@ -126,7 +126,8 @@ First public pre-release.
 - Hover-expanded notch panel with live progress on the current calendar event.
 - Calendar selection, launch at login, `.dmg` packaging and a landing page.
 
-[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/Periicles/Notchapp/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Periicles/Notchapp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Periicles/Notchapp/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Periicles/Notchapp/compare/v0.2.0...v0.3.0
