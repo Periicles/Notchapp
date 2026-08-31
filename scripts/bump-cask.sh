@@ -44,7 +44,9 @@ sha256_of() {
 }
 
 DMG_URL="$DMG_URL_BASE/v$VERSION/NotchBar.dmg"
-DMG="$(mktemp -t notchbar-dmg)"
+# Not `mktemp -t notchbar-dmg`: BSD mktemp appends the random suffix itself,
+# GNU mktemp rejects a template with no X. The job runs on Linux, dev runs on macOS.
+DMG="$(mktemp "${TMPDIR:-/tmp}/notchbar-dmg.XXXXXX")"
 trap 'rm -f "$DMG"' EXIT
 
 echo "==> Downloading $DMG_URL"
