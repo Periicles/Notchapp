@@ -5,6 +5,16 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Publishing a release now bumps the Homebrew cask on its own.** A `bump-cask`
+  job hashes the released `.dmg`, opens a pull request on `Periicles/homebrew-tap`
+  and turns on auto-merge, so it lands as soon as the tap's `brew test-bot` is
+  green. `brew upgrade --cask notchbar` no longer waits on a manual bump.
+- README documents how to update an existing install, per install route.
+
 ## [0.3.0] - 2026-08-15
 
 ### Added

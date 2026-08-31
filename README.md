@@ -101,6 +101,18 @@ Nothing is piped into a shell — every step is visible above. `curl` does not s
 
 On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose which calendars to track.
 
+## Updating
+
+NotchBar has no network access and does not check for new versions on its own — take the route matching how you installed it:
+
+| Installed with | Update with |
+|---|---|
+| Homebrew | `brew upgrade --cask notchbar` |
+| The one-command install | Quit NotchBar, then re-run the exact same command — it overwrites the copy in `/Applications` |
+| The `.dmg` | Quit NotchBar, download the latest `.dmg` and drag the app over the old one |
+
+The cask is bumped automatically whenever a release is published, so Homebrew is the route that asks the least of you. Your settings and calendar selection survive an update — they live in the app's container, not in the bundle — but macOS may ask for Calendar access again after the app bundle is replaced.
+
 ## Uninstall
 
 1. If you turned on **Launch at login**, hover the notch → open settings → toggle it **off** first (this removes the login item cleanly). You can also remove it later under **System Settings → General → Login Items**.
@@ -189,6 +201,14 @@ git push origin v0.3.0
 ```
 
 The version comes from the tag (`vX.Y.Z` → `X.Y.Z`) and is injected into the app at build time — no need to edit `Info.plist`. The `CFBundleShortVersionString` checked into `Supporting/Info.plist` is only a placeholder for local `swift run` builds; every packaged build overwrites it. Releases are published as stable, which is what keeps `/releases/latest/download/NotchBar.dmg` resolving — that URL skips pre-releases.
+
+Publishing a release also bumps the [Homebrew cask](https://github.com/Periicles/homebrew-tap). The `bump-cask` job computes the sha256 of the released `.dmg`, opens a pull request on the tap and turns on auto-merge, so the bump lands as soon as the tap's `brew test-bot` is green and `brew upgrade --cask notchbar` serves the new version with no manual step. It needs one repository secret:
+
+| Secret | For |
+|---|---|
+| `TAP_TOKEN` | fine-grained PAT with **contents**, **pull requests** and **issues** write access on `Periicles/homebrew-tap` |
+
+To rehearse the rewrite without pushing anything: `scripts/bump-cask.sh 0.3.0 "$(brew --repository periicles/tap)" --dry-run`.
 
 **Notarization is not planned** — it needs a paid Apple Developer ID, and the command-line install routes already avoid the Gatekeeper prompt. Kept here in case that ever changes: add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`.
 
