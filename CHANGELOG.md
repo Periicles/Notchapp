@@ -5,6 +5,20 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The documented Homebrew install no longer worked.** `--no-quarantine` was
+  removed from Homebrew 6, so `brew install --cask --no-quarantine notchbar`
+  fails outright with `Error: invalid option`. Homebrew now quarantines every
+  cask unconditionally, which an ad-hoc signed app cannot survive: README and
+  the landing page document `xattr -dr com.apple.quarantine` as the step that
+  replaces the flag, and no longer claim the Homebrew route is prompt-free.
+  The step repeats on every `brew upgrade` — Homebrew carries an unquarantined
+  app forward only while its signing identity holds, and an ad-hoc signature is
+  designated by a `cdhash` that each build changes.
+
 ## [0.3.2] - 2026-08-31
 
 ### Fixed
@@ -106,7 +120,9 @@ First public pre-release.
 - Hover-expanded notch panel with live progress on the current calendar event.
 - Calendar selection, launch at login, `.dmg` packaging and a landing page.
 
-[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/Periicles/Notchapp/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/Periicles/Notchapp/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Periicles/Notchapp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Periicles/Notchapp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Periicles/Notchapp/releases/tag/v0.1.0
