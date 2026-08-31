@@ -67,17 +67,20 @@ Set in `Info.plist`, this flag hides the app from the Dock and the Cmd-Tab app s
 
 ## Installation
 
-NotchBar is ad-hoc signed, not Apple-notarized — notarization needs a paid Apple Developer ID and is not planned. That only matters for **downloads made by a browser**, which macOS tags with a quarantine flag Gatekeeper then refuses. The two command-line routes below never set that flag, so they install and launch with no prompt at all.
+NotchBar is ad-hoc signed, not Apple-notarized — notarization needs a paid Apple Developer ID and is not planned. macOS refuses to open such an app whenever the copy carries a **quarantine flag**, and browsers and Homebrew both attach one. Only the `curl` route below never sets it; the other two clear it in one extra step.
 
 ### Homebrew (recommended)
 
 ```sh
 brew tap periicles/tap
 brew trust periicles/tap          # third-party casks need an explicit trust (Homebrew 6+)
-brew install --cask --no-quarantine notchbar
+brew install --cask notchbar
+xattr -dr com.apple.quarantine /Applications/NotchBar.app
 ```
 
-`--no-quarantine` is what skips the Gatekeeper prompt. Update with `brew upgrade --cask notchbar`; remove with `brew uninstall --cask notchbar` (add `--zap` to also delete its data).
+Homebrew always quarantines a cask: `--no-quarantine` was removed in Homebrew 6 and now fails with `Error: invalid option: --no-quarantine`. The last line clears the flag from the copy just installed, which is what lets an ad-hoc signed app open; without it macOS blocks the first launch until you allow it under **System Settings → Privacy & Security → Open Anyway**.
+
+Remove with `brew uninstall --cask notchbar` (add `--zap` to also delete its data).
 
 ### One command, without Homebrew
 
@@ -94,10 +97,10 @@ Nothing is piped into a shell — every step is visible above. `curl` does not s
 
 1. Download [NotchBar.dmg](https://github.com/Periicles/Notchapp/releases/latest/download/NotchBar.dmg), or get it from the [NotchBar website](https://periicles.github.io/Notchapp/).
 2. Open the `.dmg` and drag **NotchBar** into your **Applications** folder.
-3. Open NotchBar. The first time, macOS blocks it — expected for an unsigned app downloaded through a browser.
+3. Open NotchBar. The first time, macOS blocks it — expected for an app Apple has not notarized, downloaded through a browser.
 4. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**, then confirm.
 
-> **Why the extra step?** The app is unsigned, so Gatekeeper rejects the quarantine flag your browser attached to the download. You do this once; afterwards it opens with a normal double-click. Either command-line route above avoids the step entirely.
+> **Why the extra step?** The app is ad-hoc signed, so Gatekeeper rejects the quarantine flag your browser attached to the download. You do this once; afterwards it opens with a normal double-click. The `curl` route above avoids the step entirely.
 
 On first launch, grant Calendar access when prompted, then hover over the notch and click the settings icon to choose which calendars to track.
 
@@ -107,11 +110,11 @@ NotchBar has no network access and does not check for new versions on its own �
 
 | Installed with | Update with |
 |---|---|
-| Homebrew | `brew upgrade --cask notchbar` |
+| Homebrew | `brew upgrade --cask notchbar`, then `xattr -dr com.apple.quarantine /Applications/NotchBar.app` again |
 | The one-command install | Quit NotchBar, then re-run the exact same command — it overwrites the copy in `/Applications` |
 | The `.dmg` | Quit NotchBar, download the latest `.dmg` and drag the app over the old one |
 
-The cask is bumped automatically whenever a release is published, so Homebrew is the route that asks the least of you. Your settings and calendar selection survive an update — they live in the app's container, not in the bundle — but macOS may ask for Calendar access again after the app bundle is replaced.
+The cask is bumped automatically whenever a release is published, so Homebrew is the route that keeps you closest to the latest version. It does ask for the `xattr` line every time: Homebrew carries an unquarantined app's state across an upgrade only while its signing identity is unchanged, and an ad-hoc signature is designated by the binary's `cdhash`, which every build changes. Your settings and calendar selection survive an update — they live in the app's container, not in the bundle — but macOS may ask for Calendar access again after the app bundle is replaced.
 
 ## Uninstall
 
@@ -210,7 +213,7 @@ Publishing a release also bumps the [Homebrew cask](https://github.com/Periicles
 
 To rehearse the rewrite without pushing anything: `scripts/bump-cask.sh 0.3.0 "$(brew --repository periicles/tap)" --dry-run`.
 
-**Notarization is not planned** — it needs a paid Apple Developer ID, and the command-line install routes already avoid the Gatekeeper prompt. Kept here in case that ever changes: add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`.
+**Notarization is not planned** — it needs a paid Apple Developer ID, and clearing the quarantine flag is a one-line workaround for the routes that set one. Kept here in case that ever changes: add these repository secrets and follow the commented hooks in `release.yml` / `scripts/package.sh`.
 
 | Secret | For |
 |---|---|

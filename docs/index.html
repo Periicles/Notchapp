@@ -76,12 +76,13 @@
       <ol>
         <li data-i18n="install.1">Download NotchBar.dmg and open it.</li>
         <li data-i18n="install.2">Drag NotchBar into your Applications folder.</li>
-        <li data-i18n="install.3">Open NotchBar. macOS blocks it the first time — expected for an unsigned app.</li>
+        <li data-i18n="install.3">Open NotchBar. macOS blocks it the first time — expected for an app Apple has not notarized.</li>
         <li data-i18n="install.4">Open System Settings → Privacy &amp; Security, then click “Open Anyway” and confirm.</li>
       </ol>
-      <p class="note" data-i18n="install.note">NotchBar is unsigned, so Gatekeeper rejects the quarantine flag your browser attached to the download. You do this once; afterwards it opens with a normal double-click. Either command below skips the step entirely.</p>
+      <p class="note" data-i18n="install.note">NotchBar is ad-hoc signed, so Gatekeeper rejects the quarantine flag your browser attached to the download. You do this once; afterwards it opens with a normal double-click. The curl command below skips the step entirely.</p>
       <a class="btn" href="https://github.com/Periicles/Notchapp/releases/latest/download/NotchBar.dmg" data-i18n="cta.download">Download for Mac</a>
-      <p class="brew" data-i18n-html="install.brew">Prefer the terminal? Homebrew skips the steps above entirely. <code>brew tap periicles/tap &amp;&amp; brew trust periicles/tap &amp;&amp; brew install --cask --no-quarantine notchbar</code></p>
+      <p class="brew" data-i18n-html="install.brew">Prefer the terminal? Homebrew also keeps NotchBar up to date. The last line clears the quarantine flag Homebrew sets — re-run it after each upgrade. <code>brew tap periicles/tap &amp;&amp; brew trust periicles/tap &amp;&amp; brew install --cask notchbar &amp;&amp;
+xattr -dr com.apple.quarantine /Applications/NotchBar.app</code></p>
       <p class="brew" data-i18n-html="install.curl">No Homebrew? This does the same, and nothing is piped into a shell. <code>curl -fsSL -o /tmp/NotchBar.dmg https://github.com/Periicles/Notchapp/releases/latest/download/NotchBar.dmg &amp;&amp;
 hdiutil attach -quiet -nobrowse -mountpoint /tmp/NotchBar.mount /tmp/NotchBar.dmg &amp;&amp;
 cp -R /tmp/NotchBar.mount/NotchBar.app /Applications/ &amp;&amp;
