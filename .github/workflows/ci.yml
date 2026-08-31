@@ -45,3 +45,27 @@ jobs:
       - uses: actions/checkout@v5
       - name: Test
         run: swift test
+
+  # The release job runs this script on Linux while it is developed on macOS,
+  # where BSD and GNU disagree (mktemp templates, sed -i). Rehearsing the real
+  # rewrite here is what keeps that gap from surfacing mid-release.
+  cask-bump:
+    name: Cask bump dry run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out the tap
+        uses: actions/checkout@v5
+        with:
+          repository: Periicles/homebrew-tap
+          path: tap
+
+      - name: Dry-run the bump against the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(gh release view --json tagName --jq '.tagName' | sed 's/^v//')"
+          scripts/bump-cask.sh "$version" tap --dry-run
