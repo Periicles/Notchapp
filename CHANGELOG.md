@@ -5,6 +5,15 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The automatic cask bump crashed on every release.** The job runs on Linux
+  while the script is developed on macOS, and `mktemp -t <prefix>` — valid for
+  BSD, which appends the random suffix itself — is rejected by GNU mktemp. CI
+  now rehearses the real rewrite on Linux on every pull request.
+
 ## [0.3.1] - 2026-08-31
 
 ### Changed
