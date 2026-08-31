@@ -9,6 +9,12 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The settings gear covered the event's end time.** The orb is a top-trailing
+  overlay, so it painted over the in-progress layout's time range, which nothing
+  inset out of its way — 24pt of a 109pt `14:00 - 15:00` disappeared under it.
+  The orb is smaller (32pt → 26pt) and the title row now insets itself by a
+  clearance derived from the orb's own size, so the two cannot drift apart again.
+
 - **The documented Homebrew install no longer worked.** `--no-quarantine` was
   removed from Homebrew 6, so `brew install --cask --no-quarantine notchbar`
   fails outright with `Error: invalid option`. Homebrew now quarantines every

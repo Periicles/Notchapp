@@ -32,8 +32,8 @@ struct NotchPanelView: View {
         }
         .overlay(alignment: .topTrailing) {
             SettingsOrbButton(action: onSettingsTapped)
-                .padding(.top, 18)
-                .padding(.trailing, 20)
+                .padding(.top, NotchPanelMetrics.orbTopPadding)
+                .padding(.trailing, NotchPanelMetrics.orbTrailingPadding)
                 .opacity(isExpanded ? 1 : 0)
                 .scaleEffect(isExpanded ? 1 : motion.accessoryCollapsedScale, anchor: .topTrailing)
                 .allowsHitTesting(isExpanded)
@@ -75,7 +75,7 @@ struct NotchContentView: View {
                 SecondaryContent(message: snapshot.secondaryMessage ?? "")
             }
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, NotchPanelMetrics.contentHorizontalPadding)
         .padding(.top, 28)
         .padding(.bottom, 22)
         .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
@@ -99,6 +99,7 @@ private struct InProgressContent: View {
 
                 TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
             }
+            .padding(.trailing, NotchPanelMetrics.contentTrailingClearance)
 
             VStack(alignment: .leading, spacing: 12) {
                 AnimatedProgressBar(progress: snapshot.progress, tint: snapshot.tint, isAnimating: isAnimating)

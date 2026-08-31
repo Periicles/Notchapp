@@ -158,9 +158,9 @@ struct SettingsOrbButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "gearshape.fill")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: NotchPanelMetrics.orbIconSize, weight: .bold))
                 .foregroundStyle(.white.opacity(0.92))
-                .frame(width: 32, height: 32)
+                .frame(width: NotchPanelMetrics.orbDiameter, height: NotchPanelMetrics.orbDiameter)
                 .background(
                     Circle()
                         .fill(Color.white.opacity(0.08))
