@@ -12,6 +12,8 @@ jobs:
   release:
     name: Build & publish release
     runs-on: macos-15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     env:
       DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
     steps:
@@ -68,3 +70,37 @@ jobs:
             dist/NotchBar.dmg \
             --title "NotchBar $GITHUB_REF_NAME" \
             --generate-notes
+
+  bump-cask:
+    name: Bump the Homebrew cask
+    needs: release
+    runs-on: ubuntu-latest
+    # Only needs to read this repo; every write goes to the tap through TAP_TOKEN.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Require the tap token
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          [ -n "$TAP_TOKEN" ] || {
+            echo "::error::TAP_TOKEN is unset. The cask bump needs a fine-grained PAT with contents, pull-requests and issues write access on Periicles/homebrew-tap."
+            exit 1
+          }
+
+      # The tap lives in its own repository, so GITHUB_TOKEN cannot write to it.
+      - name: Check out the tap
+        uses: actions/checkout@v5
+        with:
+          repository: Periicles/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      # A PAT-authored PR triggers the tap's brew test-bot; a GITHUB_TOKEN one
+      # would not, and auto-merge would then have no check to wait for.
+      - name: Open the cask bump pull request
+        env:
+          GH_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: scripts/bump-cask.sh "${{ needs.release.outputs.version }}" tap
