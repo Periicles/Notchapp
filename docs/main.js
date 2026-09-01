@@ -7,6 +7,8 @@
                      fr: "Ton notch répond à la question. La progression de ton cours, là où tu regardes déjà." },
     "cta.download":{ en: "Download for Mac", fr: "Télécharger pour Mac" },
     "meta.reqs":   { en: "macOS 14+ · Apple Silicon · free & open source", fr: "macOS 14+ · Apple Silicon · gratuit & open source" },
+    "hero.shot":   { en: "NotchBar expanded in the notch, showing the current event's progress",
+                     fr: "NotchBar déployé dans le notch, montrant la progression de l'événement en cours" },
     "mock.title":  { en: "Organic Chemistry", fr: "Chimie organique" },
     "mock.left":   { en: "<b>23 min</b> left", fr: "<b>23 min</b> restantes" },
     "feat.heading":{ en: "What it does", fr: "Ce que ça fait" },
@@ -89,6 +91,14 @@
   document.querySelectorAll(".lang-btn").forEach(function (b) {
     b.addEventListener("click", function () { apply(b.getAttribute("data-lang")); });
   });
+
+  // Swap the CSS mock for the real screenshot, but only once it has loaded:
+  // a missing asset then costs nothing instead of showing a broken image.
+  var shot = document.querySelector(".hero-shot");
+  if (shot) {
+    shot.addEventListener("load", function () { shot.hidden = false; });
+    if (shot.complete && shot.naturalWidth > 0) shot.hidden = false;
+  }
 
   apply(resolveLang());
 })();
