@@ -194,6 +194,8 @@ docs: document five-state model in README
 
 The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.
 
+Dependabot (`.github/dependabot.yml`) opens one grouped PR a week to bump the GitHub Actions used by the workflows. The package has no third-party Swift dependencies, so nothing else is tracked.
+
 ## Releasing
 
 Releases are cut by pushing a tag. A GitHub Actions workflow (`.github/workflows/release.yml`) then lints, builds, tests, packages the `.dmg`, and publishes a GitHub Release automatically.
