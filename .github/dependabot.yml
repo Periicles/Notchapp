@@ -1,0 +1,16 @@
+# The package has no third-party Swift dependencies, so GitHub Actions is the
+# only ecosystem with versions to keep current.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # One PR per week instead of one per action keeps review noise low.
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: chore
+      include: scope
