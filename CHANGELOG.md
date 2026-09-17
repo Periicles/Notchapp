@@ -7,6 +7,14 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Breaks.** Between two tracked events of the same day, up to 2 hours apart,
+  the panel shows a grey `Break` with its own progress bar and the time left —
+  also in the menu-bar countdown — instead of a plain "next event" line.
+- **What comes next.** While an event or a break runs, the metrics row names the
+  next tracked event later today (`→ Maths 14:00`).
+
 ### Changed
 
 - **Events days away name their day** — `Next: Conf — Tue 9:00`, or `tomorrow
