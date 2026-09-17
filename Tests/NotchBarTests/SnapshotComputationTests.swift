@@ -364,6 +364,202 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.state, .emptyToday)
     }
 
+    // MARK: - Next event while one is running
+
+    func test_inProgress_namesTheNextEventLaterToday() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Physics", startOffset: -600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Maths", startOffset: 2 * 3600, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .inProgress)
+        XCTAssertEqual(snapshot.nextEvent, .init(title: "Maths", startTimeLabel: time(of: now.addingTimeInterval(2 * 3600), locale: english)))
+    }
+
+    func test_inProgress_hasNoNextEvent_whenTheNextOneIsTomorrow() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Physics", startOffset: -600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Maths", startOffset: 86_400, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertNil(snapshot.nextEvent)
+    }
+
+    func test_inProgress_nextEventSkipsOverlappingOnes() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Short", startOffset: -600, durationSeconds: 1200, relativeTo: now),
+                makeEvent(title: "Long", startOffset: -300, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Maths", startOffset: 3600, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: french
+        )
+
+        XCTAssertEqual(snapshot.nextEvent, .init(title: "Maths", startTimeLabel: time(of: now.addingTimeInterval(3600), locale: french)))
+    }
+
+    // MARK: - .onBreak
+
+    func test_state_isOnBreak_betweenTwoEventsOfTheDay() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Physics", startOffset: -3600 - 600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Maths", startOffset: 30 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .onBreak)
+        XCTAssertEqual(snapshot.title, "Break")
+        XCTAssertEqual(snapshot.progress, 10.0 / 40.0, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.elapsedLabel, "00:10:00")
+        XCTAssertEqual(snapshot.remainingLabel, "00:30:00")
+        XCTAssertEqual(snapshot.remainingSeconds, 1800)
+        XCTAssertEqual(snapshot.startTimeLabel, time(of: now.addingTimeInterval(-600), locale: english))
+        XCTAssertEqual(snapshot.endTimeLabel, time(of: now.addingTimeInterval(30 * 60), locale: english))
+        XCTAssertEqual(snapshot.nextEvent, .init(title: "Maths", startTimeLabel: time(of: now.addingTimeInterval(30 * 60), locale: english)))
+        XCTAssertNil(snapshot.joinURL)
+    }
+
+    func test_onBreak_isLocalized() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Physique", startOffset: -3600 - 600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Maths", startOffset: 30 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: french
+        )
+
+        XCTAssertEqual(snapshot.title, "Pause")
+        XCTAssertEqual(snapshot.statusLabel, "Pause")
+    }
+
+    func test_onBreak_includesAGapOfExactlyTwoHours() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3600 - 3600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(startOffset: 3600, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .onBreak)
+    }
+
+    func test_upcomingToday_whenTheGapExceedsTwoHours() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3600 - 3600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(startOffset: 3601, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+    }
+
+    func test_upcomingToday_whenNothingEndedEarlierToday() {
+        // 00:30: the previous event ended yesterday, so this is not a break.
+        let now = calendar.date(byAdding: DateComponents(minute: 30), to: calendar.startOfDay(for: fixedNoon()))!
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3600, durationSeconds: 1200, relativeTo: now),
+                makeEvent(startOffset: 30 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+    }
+
+    func test_upcomingToday_whenThePreviousEventIsUntracked() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3600 - 600, durationSeconds: 3600, calendarID: otherCalendarID, relativeTo: now),
+                makeEvent(startOffset: 30 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .upcomingToday)
+    }
+
+    func test_startingSoon_winsOverABreak() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3600 - 600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(startOffset: 4 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .startingSoon)
+    }
+
+    func test_onBreak_measuresFromTheLatestEnd_whenEarlierEventsOverlapped() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(startOffset: -3 * 3600, durationSeconds: 2.5 * 3600, relativeTo: now),
+                makeEvent(startOffset: -2 * 3600, durationSeconds: 3600 + 1200, relativeTo: now),
+                makeEvent(startOffset: 20 * 60, durationSeconds: 3600, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        // Latest end is 30 minutes ago (the first event), not 40.
+        XCTAssertEqual(snapshot.state, .onBreak)
+        XCTAssertEqual(snapshot.progress, 30.0 / 50.0, accuracy: 0.0001)
+    }
+
     // MARK: - Overlapping events
 
     func test_inProgress_showsTheEventEndingFirst_whenEventsOverlap() {
