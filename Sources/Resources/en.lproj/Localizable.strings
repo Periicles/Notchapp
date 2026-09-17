@@ -2,6 +2,7 @@
 "%lldh %lldmin" = "%lldh %lldmin";
 "%lldh%@" = "%lldh%@";
 "%lldmin" = "%lldmin";
+"All day: %@" = "All day: %@";
 "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars." = "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.";
 "Calendar access is off — re-enable in Settings" = "Calendar access is off — re-enable in Settings";
 "Current Meeting" = "Current Meeting";
@@ -10,7 +11,7 @@
 "In progress" = "In progress";
 "Join" = "Join";
 "Launch at login" = "Launch at login";
-"Next event in: %@" = "Next event in: %@";
+"Next: %@ — %@" = "Next: %@ — %@";
 "Next: %@ in %@" = "Next: %@ in %@";
 "No event today" = "No event today";
 "NotchBar has write-only calendar access and cannot read your events. Switch it to Full Access in System Settings > Privacy & Security > Calendars." = "NotchBar has write-only calendar access and cannot read your events. Switch it to Full Access in System Settings > Privacy & Security > Calendars.";
@@ -29,3 +30,4 @@
 "Upcoming Meeting" = "Upcoming Meeting";
 "Upcoming today" = "Upcoming today";
 "Upcoming" = "Upcoming";
+"tomorrow %@" = "tomorrow %@";
