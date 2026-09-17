@@ -47,7 +47,9 @@ final class UpdateChecker: ObservableObject {
                 return
             }
             state = latest > installedVersion ? .available(latest, location) : .upToDate
-            Log.updates.info("Latest release \(latest, privacy: .public), installed \(installedVersion, privacy: .public)")
+            Log.updates.info(
+                "Latest release \(latest, privacy: .public), installed \(installedVersion, privacy: .public)"
+            )
         } catch {
             Log.updates.error("Update check failed: \(error.localizedDescription, privacy: .public)")
             state = .failed
@@ -67,8 +69,6 @@ enum LatestReleaseLocator {
         case unexpectedResponse
     }
 
-    // A literal that is covered by the tests; failing here is a programming error.
-    // swiftlint:disable:next force_unwrapping
     static let latestReleaseURL = URL(string: "https://github.com/Periicles/Notchapp/releases/latest")!
     private static let timeout: TimeInterval = 10
 
