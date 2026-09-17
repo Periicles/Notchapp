@@ -5,6 +5,23 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Events days away name their day** — `Next: Conf — Tue 9:00`, or `tomorrow
+  9:00` — instead of the `DD:HH:MM:SS` countdown, which was hard to read and
+  redrew every second.
+
+### Fixed
+
+- **Overlapping events**: the panel showed whichever running event started
+  first and gave no hint of the others. It now shows the one ending first, with
+  a `+N` for the rest.
+- **A day with only all-day events said "No event today".** The empty state
+  now names them (`All day: Holiday`). They still never take over the panel.
+- **Panel times ignored the locale** the rest of the snapshot was built with.
+
 ## [0.3.3] - 2026-08-31
 
 ### Fixed
