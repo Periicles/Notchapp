@@ -9,6 +9,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - English and French, following the system language.
 - Respects **Reduce Motion**: with it on, the panel crossfades in place — no scale, offset or spring — and the progress bar's shimmer is frozen.
 - At rest NotchBar draws nothing in the notch — the physical notch shows through untouched (so it never slides with the desktop during Space switches).
+- **Progress line under the notch** (off by default, toggle in Settings): a hairline filled with the running event's — or the break's — progress, in the event's colour. It is the one thing drawn at rest, and it comes with a known trade-off: anything drawn at rest slides with the desktop during an interactive Space switch, and no window setting prevents it.
 - **Menu-bar countdown** (on by default, toggle in Settings): while an event or a break is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
 - **Event notifications** (off by default, toggle in Settings): a notification 5 minutes before a tracked event starts, and 5 minutes before it ends. Turning it on is what asks macOS for notification permission. Events shorter than 5 minutes only get the start one.
 - All-day events never drive the panel or notifications; they only show up in the empty state.
