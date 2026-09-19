@@ -22,6 +22,7 @@
 "Quit" = "Quit";
 "Refresh Events" = "Refresh Events";
 "Remaining" = "Remaining";
+"Show a progress line under the notch" = "Show a progress line under the notch";
 "Show countdown in the menu bar" = "Show countdown in the menu bar";
 "Starts in %lld min" = "Starts in %lld min";
 "Starts in %lldm — %@" = "Starts in %lldm — %@";
