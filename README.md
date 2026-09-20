@@ -9,16 +9,17 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - English and French, following the system language.
 - Respects **Reduce Motion**: with it on, the panel crossfades in place — no scale, offset or spring — and the progress bar's shimmer is frozen.
 - At rest NotchBar draws nothing in the notch — the physical notch shows through untouched (so it never slides with the desktop during Space switches).
-- **Menu-bar countdown** (on by default, toggle in Settings): while an event is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
+- **Menu-bar countdown** (on by default, toggle in Settings): while an event or a break is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
 - **Event notifications** (off by default, toggle in Settings): a notification 5 minutes before a tracked event starts, and 5 minutes before it ends. Turning it on is what asks macOS for notification permission. Events shorter than 5 minutes only get the start one.
 - All-day events never drive the panel or notifications; they only show up in the empty state.
 - Times follow the system language and 12/24-hour setting.
 - **Update check, on demand only**: **Check for Updates** in Settings asks GitHub where its latest release points (one `HEAD` request, no cookies, no identifier) and links to it when it is newer. NotchBar never reaches the network unless you press that button.
-- On hover, the panel expands and shows one of seven contextual states, computed across the events of every tracked calendar:
+- On hover, the panel expands and shows one of eight contextual states, computed across the events of every tracked calendar:
 
 | State | Trigger | Shown |
 |---|---|---|
-| **In progress** | Event overlaps now | Title (`+N` beside it when other tracked events run at the same time — the one ending first is shown), start–end times, animated progress bar, elapsed / remaining + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
+| **In progress** | Event overlaps now | Title (`+N` beside it when other tracked events run at the same time — the one ending first is shown), start–end times, animated progress bar, elapsed / remaining, `→ <title> <time>` for the next tracked event later today, + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
+| **Break** | A tracked event ended earlier today and the next starts within 2 hours of it | Same layout as *In progress*, in grey: `Break`, progress through the gap, elapsed / remaining, and the next event |
 | **Starting soon** | Next event in ≤ 5 minutes | `Starts in Xm — <title>` + **Join** button when a meeting link is detected (Zoom, Meet, Teams, Webex) |
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next: <title> — tomorrow 9:00`, or the weekday past tomorrow (`Tue 9:00`) |

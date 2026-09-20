@@ -3,6 +3,7 @@
 "%lldh%@" = "%lldh%@";
 "%lldmin" = "%lldmin";
 "All day: %@" = "All day: %@";
+"Break" = "Break";
 "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars." = "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.";
 "Calendar access is off — re-enable in Settings" = "Calendar access is off — re-enable in Settings";
 "Check for Updates" = "Check for Updates";
@@ -28,6 +29,7 @@
 "Starts in %lldm — %@" = "Starts in %lldm — %@";
 "Starts now — %@" = "Starts now — %@";
 "Starts soon" = "Starts soon";
+"Then:" = "Then:";
 "Tracked Calendars" = "Tracked Calendars";
 "Up to date" = "Up to date";
 "Upcoming Meeting" = "Upcoming Meeting";

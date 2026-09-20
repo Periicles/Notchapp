@@ -4,6 +4,7 @@ import SwiftUI
 struct EventProgressSnapshot: Equatable {
     enum State: Equatable {
         case inProgress
+        case onBreak
         case startingSoon
         case upcomingToday
         case upcomingLater
@@ -29,6 +30,15 @@ struct EventProgressSnapshot: Equatable {
     var remainingSeconds: Int?
     /// Other tracked events running at the same time as the one shown.
     var concurrentEventCount = 0
+    /// The tracked event after the current one or the break, when it starts
+    /// later today.
+    var nextEvent: NextEvent?
+
+    /// Kept in parts so the panel can shorten the title and never the time.
+    struct NextEvent: Equatable {
+        let title: String
+        let startTimeLabel: String
+    }
 
     static func noCalendar(locale: Locale = .current) -> EventProgressSnapshot {
         EventProgressSnapshot(

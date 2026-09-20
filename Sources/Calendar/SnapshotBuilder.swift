@@ -2,6 +2,9 @@ import Foundation
 import SwiftUI
 
 enum SnapshotBuilder {
+    /// Past this, the gap between two events is free time, not a break.
+    static let maximumBreak: TimeInterval = 2 * 3600
+
     static func computeSnapshot(
         events: [CalendarEvent],
         allDayEvents: [CalendarEvent] = [],
@@ -19,13 +22,19 @@ enum SnapshotBuilder {
         // Overlapping events: the one ending first is the one the user is
         // waiting on; the others are only counted.
         let running = relevant.filter { $0.startDate <= now && $0.endDate > now }
+        let endOfToday = calendar.startOfDay(for: now.addingTimeInterval(86400))
+        let upcoming = relevant.filter { $0.startDate > now }
+
         if let current = running.min(by: { $0.endDate < $1.endDate }) {
             var snapshot = inProgressSnapshot(for: current, now: now, calendar: calendar, locale: locale)
             snapshot.concurrentEventCount = running.count - 1
+            if let next = upcoming.first, next.startDate < endOfToday {
+                snapshot.nextEvent = nextEvent(for: next, calendar: calendar, locale: locale)
+            }
             return snapshot
         }
 
-        guard let next = relevant.first(where: { $0.startDate > now }) else {
+        guard let next = upcoming.first else {
             let allDayTitles = allDayEvents
                 .filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
                 .filter { $0.startDate <= now && $0.endDate > now }
@@ -40,8 +49,12 @@ enum SnapshotBuilder {
             return startingSoonSnapshot(for: next, now: now, calendar: calendar, locale: locale)
         }
 
-        let endOfToday = calendar.startOfDay(for: now.addingTimeInterval(86400))
         if next.startDate < endOfToday {
+            let lastEnd = relevant.filter { $0.endDate <= now }.map(\.endDate).max()
+            if let lastEnd, calendar.isDate(lastEnd, inSameDayAs: now),
+               next.startDate.timeIntervalSince(lastEnd) <= maximumBreak {
+                return breakSnapshot(from: lastEnd, until: next, now: now, calendar: calendar, locale: locale)
+            }
             return upcomingTodaySnapshot(for: next, now: now, calendar: calendar, locale: locale)
         }
 
@@ -164,6 +177,48 @@ enum SnapshotBuilder {
             secondaryMessage: Localized.string("Next: \(title) in \(countdown)", locale: locale),
             tint: event.color,
             state: .upcomingToday
+        )
+    }
+
+    /// Shaped like an event in progress — the gap is what the user is waiting
+    /// out — but tinted neutral so it never reads as a real one.
+    private static func breakSnapshot(
+        from start: Date,
+        until next: CalendarEvent,
+        now: Date,
+        calendar: Calendar,
+        locale: Locale
+    ) -> EventProgressSnapshot {
+        let total = next.startDate.timeIntervalSince(start)
+        let elapsed = now.timeIntervalSince(start)
+        let remainingSeconds = max(Int(next.startDate.timeIntervalSince(now)), 0)
+        let label = Localized.string("Break", locale: locale)
+
+        var snapshot = EventProgressSnapshot(
+            title: label,
+            progress: min(max(elapsed / max(total, 1), 0), 1),
+            startTimeLabel: formattedTime(start, calendar: calendar, locale: locale),
+            endTimeLabel: formattedTime(next.startDate, calendar: calendar, locale: locale),
+            elapsedLabel: formatDuration(seconds: max(Int(elapsed), 0)),
+            remainingLabel: formatDuration(seconds: remainingSeconds),
+            statusLabel: label,
+            secondaryMessage: nil,
+            tint: Color.gray,
+            state: .onBreak,
+            remainingSeconds: remainingSeconds
+        )
+        snapshot.nextEvent = nextEvent(for: next, calendar: calendar, locale: locale)
+        return snapshot
+    }
+
+    private static func nextEvent(
+        for event: CalendarEvent,
+        calendar: Calendar,
+        locale: Locale
+    ) -> EventProgressSnapshot.NextEvent {
+        EventProgressSnapshot.NextEvent(
+            title: event.title.nilIfEmpty ?? Localized.string("Upcoming Meeting", locale: locale),
+            startTimeLabel: formattedTime(event.startDate, calendar: calendar, locale: locale)
         )
     }
 

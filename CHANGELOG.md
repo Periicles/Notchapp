@@ -15,6 +15,11 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   release page. The check runs only when pressed — NotchBar still makes no
   network request on its own — which is why the app now carries the
   `com.apple.security.network.client` entitlement.
+- **Breaks.** Between two tracked events of the same day, up to 2 hours apart,
+  the panel shows a grey `Break` with its own progress bar and the time left —
+  also in the menu-bar countdown — instead of a plain "next event" line.
+- **What comes next.** While an event or a break runs, the metrics row names the
+  next tracked event later today (`→ Maths 14:00`).
 
 ### Changed
 
