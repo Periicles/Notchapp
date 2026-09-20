@@ -35,6 +35,12 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The notification toggle could be on while macOS blocked every
+  notification**, with nothing said. macOS records a refusal for good and never
+  prompts again, so an app that only ever asks leaves the switch promising
+  something that cannot happen. Settings now states it and offers a button to
+  the Notifications pane; the exact system answer is logged.
+
 - **The panel could name the wrong next event for hours.** The list of
   calendars was read at launch and then only on a calendar-store notification,
   while the 30-second poll reused it as-is. An account still syncing when

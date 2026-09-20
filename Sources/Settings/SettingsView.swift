@@ -7,6 +7,7 @@ struct SettingsView: View {
     @ObservedObject var preferences: Preferences
     @ObservedObject var calendarManager: CalendarManager
     @ObservedObject var updateChecker: UpdateChecker
+    @ObservedObject var notifier: EventNotifier
     let onPreferencesChanged: () -> Void
 
     @State private var launchAtLoginEnabled = false
@@ -60,6 +61,10 @@ struct SettingsView: View {
 
             settingRow("Notify me 5 minutes before an event starts or ends", isOn: $preferences.notifiesBeforeEvents)
 
+            if preferences.notifiesBeforeEvents, notifier.authorizationState == .blocked {
+                blockedNotificationsNote
+            }
+
             settingRow("Show a progress line under the notch", isOn: $preferences.showsRestingProgressLine)
 
             settingRow("Launch at login", isOn: $launchAtLoginEnabled)
@@ -100,6 +105,23 @@ struct SettingsView: View {
         }
         .onChange(of: preferences.showsRestingProgressLine) { _, _ in
             onPreferencesChanged()
+        }
+    }
+
+    /// macOS only ever asks once. After a refusal the toggle above promises
+    /// something that never happens unless the user is told where to undo it.
+    private var blockedNotificationsNote: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Notifications are blocked for NotchBar in System Settings.", bundle: Localized.resources)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                NSWorkspace.shared.open(NotificationAuthorization.systemSettingsURL)
+            } label: {
+                Text("Open System Settings", bundle: Localized.resources)
+            }
         }
     }
 

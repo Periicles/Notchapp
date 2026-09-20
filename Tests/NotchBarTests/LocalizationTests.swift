@@ -33,4 +33,12 @@ final class LocalizationTests: XCTestCase {
         let value = Localized.string("Version \("0.4.0") available", locale: Locale(identifier: "fr"))
         XCTAssertEqual(value, "Version 0.4.0 disponible")
     }
+
+    func test_frenchBlockedNotifications_resolves() {
+        let value = Localized.string(
+            "Notifications are blocked for NotchBar in System Settings.",
+            locale: Locale(identifier: "fr")
+        )
+        XCTAssertEqual(value, "Les notifications de NotchBar sont bloquées dans les Réglages Système.")
+    }
 }
