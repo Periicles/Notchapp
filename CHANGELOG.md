@@ -9,6 +9,12 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Check for Updates** in Settings. A `.dmg` install had no way to learn that a
+  newer version existed; the button now asks GitHub where `releases/latest`
+  redirects and, when that tag is newer than the running version, links to its
+  release page. The check runs only when pressed — NotchBar still makes no
+  network request on its own — which is why the app now carries the
+  `com.apple.security.network.client` entitlement.
 - **A progress line under the notch** (off by default). It fills with the
   running event's — or the break's — progress, in the event's colour. Anything
   drawn at rest slides with the desktop during an interactive Space switch,
