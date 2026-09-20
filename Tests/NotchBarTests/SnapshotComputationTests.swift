@@ -683,6 +683,54 @@ final class SnapshotComputationTests: XCTestCase {
         XCTAssertEqual(snapshot.secondaryMessage, "No event today")
     }
 
+    func test_upcomingStates_carryTodaysAllDayEvent() {
+        let now = fixedNoon()
+        let allDay = [makeAllDayEvent(title: "Holiday", dayOffset: 0, relativeTo: now)]
+        let cases: [(String, TimeInterval)] = [("soon", 3 * 60), ("today", 3 * 3600), ("later", 2 * 86_400)]
+
+        for (name, offset) in cases {
+            let snapshot = SnapshotBuilder.computeSnapshot(
+                events: [makeEvent(title: "Maths", startOffset: offset, durationSeconds: 3600, relativeTo: now)],
+                allDayEvents: allDay,
+                selectedCalendarIDs: [calendarID],
+                now: now,
+                calendar: calendar,
+                locale: english
+            )
+
+            XCTAssertEqual(snapshot.allDayMessage, "All day: Holiday", name)
+        }
+    }
+
+    func test_runningStates_carryNoAllDayMessage() {
+        // The in-progress layout has no room for it, so it is not computed either.
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(title: "Maths", startOffset: -600, durationSeconds: 3600, relativeTo: now)],
+            allDayEvents: [makeAllDayEvent(title: "Holiday", dayOffset: 0, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertNil(snapshot.allDayMessage)
+    }
+
+    func test_upcomingStates_haveNoAllDayMessage_whenNoneIsRunning() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(title: "Maths", startOffset: 3 * 3600, durationSeconds: 3600, relativeTo: now)],
+            allDayEvents: [makeAllDayEvent(title: "Tomorrow", dayOffset: 1, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertNil(snapshot.allDayMessage)
+    }
+
     func test_allDayEvents_neverTakeOverATimedEvent() {
         let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
