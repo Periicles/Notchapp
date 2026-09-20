@@ -60,6 +60,8 @@ struct SettingsView: View {
 
             settingRow("Notify me 5 minutes before an event starts or ends", isOn: $preferences.notifiesBeforeEvents)
 
+            settingRow("Show a progress line under the notch", isOn: $preferences.showsRestingProgressLine)
+
             settingRow("Launch at login", isOn: $launchAtLoginEnabled)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
                     setLaunchAtLogin(newValue)
@@ -94,6 +96,9 @@ struct SettingsView: View {
             onPreferencesChanged()
         }
         .onChange(of: preferences.notifiesBeforeEvents) { _, _ in
+            onPreferencesChanged()
+        }
+        .onChange(of: preferences.showsRestingProgressLine) { _, _ in
             onPreferencesChanged()
         }
     }

@@ -15,6 +15,10 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   release page. The check runs only when pressed — NotchBar still makes no
   network request on its own — which is why the app now carries the
   `com.apple.security.network.client` entitlement.
+- **A progress line under the notch** (off by default). It fills with the
+  running event's — or the break's — progress, in the event's colour. Anything
+  drawn at rest slides with the desktop during an interactive Space switch,
+  which no window setting prevents, so it is opt-in.
 - **Breaks.** Between two tracked events of the same day, up to 2 hours apart,
   the panel shows a grey `Break` with its own progress bar and the time left —
   also in the menu-bar countdown — instead of a plain "next event" line.

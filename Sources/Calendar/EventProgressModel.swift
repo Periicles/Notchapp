@@ -109,6 +109,12 @@ final class EventProgressModel: ObservableObject {
 
     /// Compact countdown for the menu bar — the only surface that shows anything
     /// while the panel is closed. `nil` hides it entirely.
+    /// Fraction of the at-rest line to fill, or `nil` when it is off or there is
+    /// nothing running.
+    var restingProgress: Double? {
+        RestingProgressLine.progress(for: snapshot, enabled: preferences?.showsRestingProgressLine ?? false)
+    }
+
     var menuBarText: String? {
         MenuBarLabel.text(for: snapshot, enabled: preferences?.showsMenuBarCountdown ?? false)
     }
@@ -131,7 +137,9 @@ final class EventProgressModel: ObservableObject {
         idleTask?.cancel()
         idleTask = nil
 
-        guard !isHoverVisible, preferences?.showsMenuBarCountdown == true else { return }
+        let needsIdleTick = preferences?.showsMenuBarCountdown == true
+            || preferences?.showsRestingProgressLine == true
+        guard !isHoverVisible, needsIdleTick else { return }
 
         // Matches CalendarManager's polling cadence: the label can never be more
         // than one calendar poll behind, and it rounds to the minute anyway.

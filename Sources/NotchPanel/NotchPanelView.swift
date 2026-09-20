@@ -30,6 +30,16 @@ struct NotchPanelView: View {
                 .offset(y: isExpanded ? 0 : motion.collapsedOffsetY)
                 .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
+        .overlay(alignment: .top) {
+            // Sits just below the closed notch, the only place a line reads as
+            // belonging to it rather than floating on the desktop.
+            if !isExpanded, let progress = progressModel.restingProgress {
+                RestingProgressLineView(progress: progress, tint: progressModel.snapshot.tint)
+                    .frame(width: ScreenHelper.collapsedWidth())
+                    .offset(y: ScreenHelper.closedHeight())
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             SettingsOrbButton(action: onSettingsTapped)
                 .padding(.top, NotchPanelMetrics.orbTopPadding)

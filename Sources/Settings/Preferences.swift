@@ -8,6 +8,7 @@ final class Preferences: ObservableObject {
         static let selectedCalendarIdentifiers = "selectedCalendarIdentifiers"
         static let showsMenuBarCountdown = "showsMenuBarCountdown"
         static let notifiesBeforeEvents = "notifiesBeforeEvents"
+        static let showsRestingProgressLine = "showsRestingProgressLine"
         static let legacySingleIdentifier = "selectedCalendarIdentifier"
         static let legacySelectedCalendarIDs = "selectedCalendarIDs"
         static let legacyShowsNoMeetingState = "showsNoMeetingState"
@@ -38,6 +39,17 @@ final class Preferences: ObservableObject {
         }
     }
 
+    /// Off by default: it is the only thing NotchBar draws at rest, and what it
+    /// costs — sliding with the desktop during an interactive Space switch — is
+    /// for the user to accept, not for the app to assume.
+    @Published var showsRestingProgressLine: Bool {
+        didSet {
+            defaults.set(showsRestingProgressLine, forKey: Keys.showsRestingProgressLine)
+            let state = self.showsRestingProgressLine ? "on" : "off"
+            Log.preferences.debug("Resting progress line \(state, privacy: .public)")
+        }
+    }
+
     var hasStoredSelection: Bool {
         defaults.object(forKey: Keys.selectedCalendarIdentifiers) != nil
     }
@@ -52,6 +64,7 @@ final class Preferences: ObservableObject {
         self.selectedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.selectedCalendarIdentifiers) ?? [])
         self.showsMenuBarCountdown = Self.bool(in: defaults, forKey: Keys.showsMenuBarCountdown, default: true)
         self.notifiesBeforeEvents = Self.bool(in: defaults, forKey: Keys.notifiesBeforeEvents, default: false)
+        self.showsRestingProgressLine = Self.bool(in: defaults, forKey: Keys.showsRestingProgressLine, default: false)
     }
 
     /// `UserDefaults.bool(forKey:)` cannot distinguish "stored false" from

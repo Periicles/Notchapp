@@ -13,7 +13,9 @@ final class NotchPanelController: NSObject {
     private var hostingView: NSHostingView<NotchPanelView>!
     private let settingsPopover = NSPopover()
     private lazy var settingsContentController: NSHostingController<SettingsView> = {
-        NSHostingController(
+        // The popover follows the view instead of a hard-coded size: every new
+        // settings row used to eat into a fixed 300pt and would eventually clip.
+        let controller = NSHostingController(
             rootView: SettingsView(
                 preferences: preferences,
                 calendarManager: calendarManager,
@@ -23,6 +25,8 @@ final class NotchPanelController: NSObject {
                 }
             )
         )
+        controller.sizingOptions = [.preferredContentSize]
+        return controller
     }()
     private var hideWorkItem: DispatchWorkItem?
     // nonisolated(unsafe): only written/read on MainActor; nonisolated to allow deinit cleanup
@@ -164,7 +168,6 @@ final class NotchPanelController: NSObject {
 
         if settingsPopover.contentViewController !== settingsContentController {
             settingsPopover.behavior = .transient
-            settingsPopover.contentSize = NSSize(width: 320, height: 300)
             settingsPopover.contentViewController = settingsContentController
         }
 
