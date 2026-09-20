@@ -16,8 +16,8 @@ final class LocalizationTests: XCTestCase {
     }
 
     func test_frenchFormatString_resolves() {
-        let value = Localized.string("Next event in: \("01:02:03:04")", locale: Locale(identifier: "fr"))
-        XCTAssertEqual(value, "Prochain événement dans : 01:02:03:04")
+        let value = Localized.string("All day: \("Férié")", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Toute la journée : Férié")
     }
 
     func test_frenchAccessRevoked_resolves() {

@@ -31,6 +31,26 @@ final class SnapshotComputationTests: XCTestCase {
         )
     }
 
+    private func makeAllDayEvent(
+        title: String,
+        dayOffset: Int,
+        calendarID: String? = nil,
+        relativeTo now: Date
+    ) -> CalendarEvent {
+        let start = calendar.date(byAdding: .day, value: dayOffset, to: calendar.startOfDay(for: now))!
+        return CalendarEvent(
+            identifier: "all-day-\(title)",
+            title: title,
+            startDate: start,
+            endDate: calendar.date(byAdding: .day, value: 1, to: start)!,
+            calendarIdentifier: calendarID ?? self.calendarID,
+            color: .blue
+        )
+    }
+
+    private let english = Locale(identifier: "en_GB")
+    private let french = Locale(identifier: "fr_FR")
+
     // MARK: - .noCalendar
 
     func test_state_isNoCalendar_whenSelectedIDsIsEmpty() {
@@ -239,10 +259,10 @@ final class SnapshotComputationTests: XCTestCase {
             selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar,
-            locale: Locale(identifier: "en")
+            locale: english
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
-        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 03:00:00:00")
+        XCTAssertEqual(snapshot.secondaryMessage, "Next: Conf — \(weekday(of: now.addingTimeInterval(3 * 86_400))) \(time(of: now, locale: english))")
     }
 
     func test_boundary_eventBeforeMidnight_isUpcomingToday() {
@@ -266,25 +286,51 @@ final class SnapshotComputationTests: XCTestCase {
             selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar,
-            locale: Locale(identifier: "en")
+            locale: english
         )
         XCTAssertEqual(snapshot.state, .upcomingLater)
-        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 00:00:40:00")
+        XCTAssertEqual(snapshot.secondaryMessage, "Next: Early — tomorrow \(time(of: now.addingTimeInterval(40 * 60), locale: english))")
     }
 
-    func test_upcomingLater_countdownFormat() {
-        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
-        let offsetSeconds: TimeInterval = 95415 // 1d 2h 30m 15s
+    func test_upcomingLater_saysTomorrow_forTheNextDay() {
+        let now = fixedNoon()
         let snapshot = SnapshotBuilder.computeSnapshot(
-            events: [makeEvent(title: "Sprint Review", startOffset: offsetSeconds, durationSeconds: 3600, relativeTo: now)],
+            events: [makeEvent(title: "Review", startOffset: 86_400 - 3 * 3600, durationSeconds: 3600, relativeTo: now)],
             selectedCalendarIDs: [calendarID],
             now: now,
             calendar: calendar,
-            locale: Locale(identifier: "en")
+            locale: english
         )
 
-        XCTAssertEqual(snapshot.state, .upcomingLater)
-        XCTAssertEqual(snapshot.secondaryMessage, "Next event in: 01:02:30:15")
+        XCTAssertEqual(snapshot.secondaryMessage, "Next: Review — tomorrow \(time(of: now.addingTimeInterval(21 * 3600), locale: english))")
+    }
+
+    func test_upcomingLater_isLocalized() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(title: "Maths", startOffset: 86_400 - 3 * 3600, durationSeconds: 3600, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: french
+        )
+
+        XCTAssertEqual(snapshot.secondaryMessage, "Prochain : Maths — demain \(time(of: now.addingTimeInterval(21 * 3600), locale: french))")
+    }
+
+    func test_upcomingLater_isStable_acrossSeconds() {
+        // The message names a day and a time, so it must not tick every second.
+        let now = fixedNoon()
+        let events = [makeEvent(title: "Conf", startOffset: 3 * 86_400, durationSeconds: 3600, relativeTo: now)]
+        let first = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: english
+        )
+        let second = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now.addingTimeInterval(1),
+            calendar: calendar, locale: english
+        )
+
+        XCTAssertEqual(first, second)
     }
 
     // MARK: - .emptyToday
@@ -316,6 +362,144 @@ final class SnapshotComputationTests: XCTestCase {
         )
 
         XCTAssertEqual(snapshot.state, .emptyToday)
+    }
+
+    // MARK: - Overlapping events
+
+    func test_inProgress_showsTheEventEndingFirst_whenEventsOverlap() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Workshop", startOffset: -600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1200, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.title, "Standup")
+        XCTAssertEqual(snapshot.concurrentEventCount, 1)
+    }
+
+    func test_inProgress_hasNoConcurrentEvents_whenAlone() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1200, relativeTo: now),
+                makeEvent(title: "Later", startOffset: 3600, durationSeconds: 1200, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.concurrentEventCount, 0)
+    }
+
+    func test_inProgress_ignoresOverlapsFromUntrackedCalendars() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                makeEvent(title: "Workshop", startOffset: -600, durationSeconds: 3600, relativeTo: now),
+                makeEvent(title: "Other", startOffset: -300, durationSeconds: 1200,
+                          calendarID: otherCalendarID, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.title, "Workshop")
+        XCTAssertEqual(snapshot.concurrentEventCount, 0)
+    }
+
+    // MARK: - Time labels
+
+    func test_timeLabels_followTheLocale() {
+        let now = fixedNoon()
+        let events = [makeEvent(startOffset: -300, durationSeconds: 3600, relativeTo: now)]
+
+        let french = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar, locale: french
+        )
+        let american = SnapshotBuilder.computeSnapshot(
+            events: events, selectedCalendarIDs: [calendarID], now: now, calendar: calendar,
+            locale: Locale(identifier: "en_US")
+        )
+
+        XCTAssertEqual(french.startTimeLabel, "11:55")
+        XCTAssertEqual(french.endTimeLabel, "12:55")
+        XCTAssertTrue(american.endTimeLabel.hasSuffix("PM"), american.endTimeLabel)
+    }
+
+    // MARK: - All-day events
+
+    func test_emptyToday_namesTodaysAllDayEvent() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [],
+            allDayEvents: [makeAllDayEvent(title: "Holiday", dayOffset: 0, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .emptyToday)
+        XCTAssertEqual(snapshot.secondaryMessage, "All day: Holiday")
+    }
+
+    func test_emptyToday_countsExtraAllDayEvents() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [],
+            allDayEvents: [
+                makeAllDayEvent(title: "Holiday", dayOffset: 0, relativeTo: now),
+                makeAllDayEvent(title: "Birthday", dayOffset: 0, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: french
+        )
+
+        XCTAssertEqual(snapshot.secondaryMessage, "Toute la journée : Holiday +1")
+    }
+
+    func test_emptyToday_ignoresAllDayEventsNotRunningToday() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [],
+            allDayEvents: [
+                makeAllDayEvent(title: "Yesterday", dayOffset: -1, relativeTo: now),
+                makeAllDayEvent(title: "Untracked", dayOffset: 0, calendarID: otherCalendarID, relativeTo: now),
+            ],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.secondaryMessage, "No event today")
+    }
+
+    func test_allDayEvents_neverTakeOverATimedEvent() {
+        let now = fixedNoon()
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [makeEvent(title: "Standup", startOffset: -300, durationSeconds: 1200, relativeTo: now)],
+            allDayEvents: [makeAllDayEvent(title: "Holiday", dayOffset: 0, relativeTo: now)],
+            selectedCalendarIDs: [calendarID],
+            now: now,
+            calendar: calendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .inProgress)
+        XCTAssertEqual(snapshot.title, "Standup")
     }
 
     // MARK: - Progress truncation
@@ -406,6 +590,18 @@ final class SnapshotComputationTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// Zero-padding of the hour varies with the ICU version, so the expected
+    /// time is built with the app's own style; what the tests pin is the rest.
+    private func time(of date: Date, locale: Locale) -> String {
+        date.formatted(
+            Date.FormatStyle(date: .omitted, time: .shortened, locale: locale, calendar: calendar, timeZone: calendar.timeZone)
+        )
+    }
+
+    private func weekday(of date: Date) -> String {
+        date.formatted(Date.FormatStyle(locale: english, calendar: calendar, timeZone: calendar.timeZone).weekday(.abbreviated))
+    }
 
     /// Noon of a fixed reference day — never depends on when the test runs.
     private func fixedNoon() -> Date {

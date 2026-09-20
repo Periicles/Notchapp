@@ -27,6 +27,8 @@ struct EventProgressSnapshot: Equatable {
     /// need their own presentation (the menu-bar countdown) build from. `nil`
     /// whenever no event is in progress.
     var remainingSeconds: Int?
+    /// Other tracked events running at the same time as the one shown.
+    var concurrentEventCount = 0
 
     static func noCalendar(locale: Locale = .current) -> EventProgressSnapshot {
         EventProgressSnapshot(
@@ -43,8 +45,19 @@ struct EventProgressSnapshot: Equatable {
         )
     }
 
-    static func emptyToday(locale: Locale = .current) -> EventProgressSnapshot {
-        EventProgressSnapshot(
+    /// `allDayTitles`: tracked all-day events covering now. They never take the
+    /// panel over, but without them a day off reads as "no event today".
+    static func emptyToday(locale: Locale = .current, allDayTitles: [String] = []) -> EventProgressSnapshot {
+        let message: String
+        if let first = allDayTitles.first {
+            let extra = allDayTitles.count - 1
+            let titles = extra > 0 ? "\(first) +\(extra)" : first
+            message = Localized.string("All day: \(titles)", locale: locale)
+        } else {
+            message = Localized.string("No event today", locale: locale)
+        }
+
+        return EventProgressSnapshot(
             title: "",
             progress: 0,
             startTimeLabel: "",
@@ -52,7 +65,7 @@ struct EventProgressSnapshot: Equatable {
             elapsedLabel: "",
             remainingLabel: "",
             statusLabel: "",
-            secondaryMessage: Localized.string("No event today", locale: locale),
+            secondaryMessage: message,
             tint: Color.secondary.opacity(0.35),
             state: .emptyToday
         )

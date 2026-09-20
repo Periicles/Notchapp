@@ -95,6 +95,13 @@ private struct InProgressContent: View {
                     .lineLimit(1)
                     .foregroundStyle(.white)
 
+                if snapshot.concurrentEventCount > 0 {
+                    Text(verbatim: "+\(snapshot.concurrentEventCount)")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.42))
+                        .fixedSize()
+                }
+
                 Spacer(minLength: 0)
 
                 TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
