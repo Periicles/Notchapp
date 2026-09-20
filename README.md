@@ -12,7 +12,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - **Progress line under the notch** (off by default, toggle in Settings): a hairline filled with the running event's — or the break's — progress, in the event's colour. It is the one thing drawn at rest, and it comes with a known trade-off: anything drawn at rest slides with the desktop during an interactive Space switch, and no window setting prevents it.
 - **Menu-bar countdown** (on by default, toggle in Settings): while an event or a break is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
 - **Event notifications** (off by default, toggle in Settings): a notification 5 minutes before a tracked event starts, and 5 minutes before it ends. Turning it on is what asks macOS for notification permission. Events shorter than 5 minutes only get the start one.
-- All-day events never drive the panel or notifications; they only show up in the empty state.
+- All-day events never drive the panel or notifications. A tracked one covering today is named under the message of every waiting state (`All day: <title>`), and is the message itself when nothing else is planned.
 - Times follow the system language and 12/24-hour setting.
 - **Update check, on demand only**: **Check for Updates** in Settings asks GitHub where its latest release points (one `HEAD` request, no cookies, no identifier) and links to it when it is newer. NotchBar never reaches the network unless you press that button.
 - On hover, the panel expands and shows one of eight contextual states, computed across the events of every tracked calendar:
@@ -25,6 +25,8 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next: <title> — tomorrow 9:00`, or the weekday past tomorrow (`Tue 9:00`) |
 | **Empty today** | No events found | `No event today`, or `All day: <title>` when a tracked all-day event covers today |
+
+Every waiting state — *Starting soon*, *Upcoming today*, *Upcoming* — also carries `All day: <title>` under its message when a tracked all-day event covers today. The in-progress and break layouts do not: their row is full.
 | **No calendar** | No calendars selected | `Pick a calendar in Settings` |
 | **Access off** | Calendar access denied or revoked | `Calendar access is off — re-enable in Settings` |
 

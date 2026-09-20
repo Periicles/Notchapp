@@ -33,6 +33,9 @@ struct EventProgressSnapshot: Equatable {
     /// The tracked event after the current one or the break, when it starts
     /// later today.
     var nextEvent: NextEvent?
+    /// Tracked all-day events covering now, for the states whose layout has room
+    /// to name them. `nil` while an event or a break is running.
+    var allDayMessage: String?
 
     /// Kept in parts so the panel can shorten the title and never the time.
     struct NextEvent: Equatable {
@@ -58,14 +61,8 @@ struct EventProgressSnapshot: Equatable {
     /// `allDayTitles`: tracked all-day events covering now. They never take the
     /// panel over, but without them a day off reads as "no event today".
     static func emptyToday(locale: Locale = .current, allDayTitles: [String] = []) -> EventProgressSnapshot {
-        let message: String
-        if let first = allDayTitles.first {
-            let extra = allDayTitles.count - 1
-            let titles = extra > 0 ? "\(first) +\(extra)" : first
-            message = Localized.string("All day: \(titles)", locale: locale)
-        } else {
-            message = Localized.string("No event today", locale: locale)
-        }
+        let message = allDayMessage(for: allDayTitles, locale: locale)
+            ?? Localized.string("No event today", locale: locale)
 
         return EventProgressSnapshot(
             title: "",
@@ -79,6 +76,14 @@ struct EventProgressSnapshot: Equatable {
             tint: Color.secondary.opacity(0.35),
             state: .emptyToday
         )
+    }
+
+    /// `All day: <title>`, with `+N` for the ones it does not name.
+    static func allDayMessage(for titles: [String], locale: Locale = .current) -> String? {
+        guard let first = titles.first else { return nil }
+        let extra = titles.count - 1
+        let joined = extra > 0 ? "\(first) +\(extra)" : first
+        return Localized.string("All day: \(joined)", locale: locale)
     }
 
     static func accessRevoked(locale: Locale = .current) -> EventProgressSnapshot {
@@ -189,6 +194,11 @@ final class EventProgressModel: ObservableObject {
 
     private func updateSnapshot(_ newSnapshot: EventProgressSnapshot) {
         guard newSnapshot != snapshot else { return }
+        if newSnapshot.state != snapshot.state || newSnapshot.title != snapshot.title {
+            // The one line that says what the panel is actually showing, so a
+            // report of "it shows the wrong event" is diagnosable after the fact.
+            Log.panel.debug("Snapshot: \(String(describing: newSnapshot.state), privacy: .public)")
+        }
         snapshot = newSnapshot
     }
 

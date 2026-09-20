@@ -82,7 +82,10 @@ struct NotchContentView: View {
                     isAnimating: progressModel.isHoverVisible && shimmerEnabled
                 )
             case .startingSoon, .upcomingToday, .upcomingLater, .emptyToday, .noCalendar, .accessRevoked:
-                SecondaryContent(message: snapshot.secondaryMessage ?? "")
+                SecondaryContent(
+                    message: snapshot.secondaryMessage ?? "",
+                    allDayMessage: snapshot.allDayMessage
+                )
             }
         }
         .padding(.horizontal, NotchPanelMetrics.contentHorizontalPadding)
@@ -171,16 +174,26 @@ private struct NextEventLabel: View {
 
 private struct SecondaryContent: View {
     let message: String
+    var allDayMessage: String?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 6) {
             Spacer(minLength: 0)
             Text(message)
                 .font(.system(size: 17, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.78))
                 .multilineTextAlignment(.center)
-                .lineLimit(3)
+                .lineLimit(2)
                 .padding(.trailing, 46)
+
+            if let allDayMessage {
+                Text(allDayMessage)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .padding(.trailing, 46)
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

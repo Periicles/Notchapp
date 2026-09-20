@@ -99,6 +99,13 @@ final class CalendarManager: ObservableObject {
             return
         }
 
+        // Re-read the list every time rather than trusting the one loaded at
+        // bootstrap: an account still syncing at launch leaves it short, and
+        // until this reads it again the app polls events of calendars it cannot
+        // see — silently showing the wrong "next" event. Selection is never
+        // pruned here, so a calendar missing for one cycle stays selected.
+        availableCalendars = store.calendars(for: .event)
+
         let calendars = selectedCalendars(using: preferences)
         guard !calendars.isEmpty else {
             events = []
@@ -118,7 +125,12 @@ final class CalendarManager: ObservableObject {
             .sorted { $0.startDate < $1.startDate }
         events = fetched.filter { !$0.isAllDay }.map(Self.makeEvent)
         allDayEvents = fetched.filter(\.isAllDay).map(Self.makeEvent)
-        Log.calendar.debug("Refresh: \(self.events.count) events in window")
+        Log.calendar.debug(
+            """
+            Refresh: \(self.events.count) events, \(self.allDayEvents.count) all-day, \
+            from \(calendars.count)/\(self.availableCalendars.count) calendars
+            """
+        )
     }
 
     /// The look-back has to cover the longest event that can still be running:

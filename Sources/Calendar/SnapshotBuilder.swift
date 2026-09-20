@@ -24,6 +24,11 @@ enum SnapshotBuilder {
         let running = relevant.filter { $0.startDate <= now && $0.endDate > now }
         let endOfToday = calendar.startOfDay(for: now.addingTimeInterval(86400))
         let upcoming = relevant.filter { $0.startDate > now }
+        let allDayTitles = allDayEvents
+            .filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
+            .filter { $0.startDate <= now && $0.endDate > now }
+            .map(\.title)
+            .filter { !$0.isEmpty }
 
         if let current = running.min(by: { $0.endDate < $1.endDate }) {
             var snapshot = inProgressSnapshot(for: current, now: now, calendar: calendar, locale: locale)
@@ -35,18 +40,18 @@ enum SnapshotBuilder {
         }
 
         guard let next = upcoming.first else {
-            let allDayTitles = allDayEvents
-                .filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
-                .filter { $0.startDate <= now && $0.endDate > now }
-                .map(\.title)
-                .filter { !$0.isEmpty }
             return .emptyToday(locale: locale, allDayTitles: allDayTitles)
         }
+
+        // Only the states rendered as a centred message have room for it.
+        let allDayMessage = EventProgressSnapshot.allDayMessage(for: allDayTitles, locale: locale)
 
         let secondsUntilStart = next.startDate.timeIntervalSince(now)
 
         if secondsUntilStart <= 5 * 60 {
-            return startingSoonSnapshot(for: next, now: now, calendar: calendar, locale: locale)
+            var snapshot = startingSoonSnapshot(for: next, now: now, calendar: calendar, locale: locale)
+            snapshot.allDayMessage = allDayMessage
+            return snapshot
         }
 
         if next.startDate < endOfToday {
@@ -55,10 +60,14 @@ enum SnapshotBuilder {
                next.startDate.timeIntervalSince(lastEnd) <= maximumBreak {
                 return breakSnapshot(from: lastEnd, until: next, now: now, calendar: calendar, locale: locale)
             }
-            return upcomingTodaySnapshot(for: next, now: now, calendar: calendar, locale: locale)
+            var snapshot = upcomingTodaySnapshot(for: next, now: now, calendar: calendar, locale: locale)
+            snapshot.allDayMessage = allDayMessage
+            return snapshot
         }
 
-        return upcomingLaterSnapshot(for: next, now: now, calendar: calendar, locale: locale)
+        var snapshot = upcomingLaterSnapshot(for: next, now: now, calendar: calendar, locale: locale)
+        snapshot.allDayMessage = allDayMessage
+        return snapshot
     }
 
     /// Names the day and time rather than counting down: days away, a live
