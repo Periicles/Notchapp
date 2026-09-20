@@ -11,6 +11,7 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 - At rest NotchBar draws nothing in the notch — the physical notch shows through untouched (so it never slides with the desktop during Space switches).
 - **Menu-bar countdown** (on by default, toggle in Settings): while an event is running, the time left shows next to the menu-bar icon — `23 min`, then `1h05` past the hour. No event running, or the toggle off, and it's the icon alone.
 - **Event notifications** (off by default, toggle in Settings): a notification 5 minutes before a tracked event starts, and 5 minutes before it ends. Turning it on is what asks macOS for notification permission. Events shorter than 5 minutes only get the start one.
+- **Update check, on demand only**: **Check for Updates** in Settings asks GitHub where its latest release points (one `HEAD` request, no cookies, no identifier) and links to it when it is newer. NotchBar never reaches the network unless you press that button.
 - On hover, the panel expands and shows one of seven contextual states, computed across the events of every tracked calendar:
 
 | State | Trigger | Shown |
@@ -31,13 +32,14 @@ Sources/
 ├── NotchPanel/                    # NSPanel windows, hover tracking, SwiftUI rendering, motion style
 ├── Calendar/                      # EventKit access, snapshot model, meeting links, notifications
 ├── Settings/                      # UserDefaults-backed preferences + settings UI
+├── Update/                        # On-demand check of the latest GitHub release
 ├── Utilities/                     # ScreenHelper (notch geometry), Localized helper, os.Logger categories
 └── Resources/                     # en.lproj/ + fr.lproj/ Localizable.strings, processed natively by SwiftPM
 Tests/
 └── NotchBarTests/                 # XCTest target (@testable import NotchBar)
 Supporting/
 ├── Info.plist                     # LSUIElement, calendars usage description, bundle metadata
-└── NotchBar.entitlements          # Sandbox + calendars entitlement
+└── NotchBar.entitlements          # Sandbox + calendars + outgoing network (update check only)
 ```
 
 ## Architecture
@@ -106,7 +108,7 @@ On first launch, grant Calendar access when prompted, then hover over the notch 
 
 ## Updating
 
-NotchBar has no network access and does not check for new versions on its own — take the route matching how you installed it:
+NotchBar never looks for new versions on its own. To find out whether one exists, hover the notch → open settings → **Check for Updates**; when a newer release is out, its link opens the release page. Then take the route matching how you installed it:
 
 | Installed with | Update with |
 |---|---|

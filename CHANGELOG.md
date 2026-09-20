@@ -5,6 +5,17 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Check for Updates** in Settings. A `.dmg` install had no way to learn that a
+  newer version existed; the button now asks GitHub where `releases/latest`
+  redirects and, when that tag is newer than the running version, links to its
+  release page. The check runs only when pressed — NotchBar still makes no
+  network request on its own — which is why the app now carries the
+  `com.apple.security.network.client` entitlement.
+
 ## [0.3.3] - 2026-08-31
 
 ### Fixed

@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var preferences: Preferences
     @ObservedObject var calendarManager: CalendarManager
+    @ObservedObject var updateChecker: UpdateChecker
     let onPreferencesChanged: () -> Void
 
     @State private var launchAtLoginEnabled = false
@@ -67,6 +68,8 @@ struct SettingsView: View {
                     launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
                 }
 
+            updateRow
+
             Divider()
                 .padding(.top, 2)
 
@@ -107,6 +110,47 @@ struct SettingsView: View {
             Toggle("", isOn: isOn)
                 .toggleStyle(.switch)
                 .labelsHidden()
+        }
+    }
+
+    /// The status goes under the button rather than beside it: side by side,
+    /// the French label and a long version string cannot share 292pt.
+    private var updateRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                Task { await updateChecker.check() }
+            } label: {
+                Text("Check for Updates", bundle: Localized.resources)
+            }
+            .disabled(!updateChecker.canCheck)
+
+            updateStatus
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch updateChecker.state {
+        case .idle:
+            EmptyView()
+        case .checking:
+            ProgressView()
+                .controlSize(.mini)
+        case .upToDate:
+            Text("Up to date", bundle: Localized.resources)
+        case .failed:
+            Text("Couldn't check", bundle: Localized.resources)
+        case let .available(version, releasePage):
+            Button {
+                NSWorkspace.shared.open(releasePage)
+            } label: {
+                Text("Version \(version.description) available", bundle: Localized.resources)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
         }
     }
 
