@@ -11,6 +11,8 @@ struct NotchBarApp: App {
             SettingsView(
                 preferences: appDelegate.preferences,
                 calendarManager: appDelegate.calendarManager,
+                updateChecker: appDelegate.updateChecker,
+                notifier: appDelegate.notifier,
                 onPreferencesChanged: {
                     appDelegate.handlePreferencesChanged()
                 }
@@ -67,8 +69,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let preferences = Preferences()
     let calendarManager = CalendarManager()
     let progressModel = EventProgressModel()
+    let updateChecker = UpdateChecker()
 
-    private let notifier = EventNotifier()
+    let notifier = EventNotifier()
     private var panelController: NotchPanelController?
     private var cancellables = Set<AnyCancellable>()
 
@@ -77,7 +80,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController = NotchPanelController(
             calendarManager: calendarManager,
             progressModel: progressModel,
-            preferences: preferences
+            preferences: preferences,
+            updateChecker: updateChecker,
+            notifier: notifier
         )
         progressModel.bind(to: calendarManager, preferences: preferences)
         observeEventsForNotifications()

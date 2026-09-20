@@ -227,4 +227,19 @@ final class PreferencesTests: XCTestCase {
             []
         )
     }
+
+    // MARK: - showsRestingProgressLine
+
+    func test_showsRestingProgressLine_defaultsToOff_whenNeverSet() {
+        XCTAssertFalse(Preferences(defaults: defaults).showsRestingProgressLine)
+    }
+
+    func test_showsRestingProgressLine_roundTripsThroughDefaults() {
+        let prefs = Preferences(defaults: defaults)
+
+        prefs.showsRestingProgressLine = true
+
+        XCTAssertEqual(defaults.object(forKey: "showsRestingProgressLine") as? Bool, true)
+        XCTAssertTrue(Preferences(defaults: defaults).showsRestingProgressLine)
+    }
 }

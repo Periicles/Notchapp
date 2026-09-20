@@ -26,6 +26,9 @@ final class CalendarManager: ObservableObject {
     /// "what is running now" against a live `now`, so a truncated list goes stale
     /// between polls as soon as one event ends and the following one starts.
     @Published private(set) var events: [CalendarEvent] = []
+    /// All-day events of the same window, kept apart: they never drive the panel
+    /// or notifications, they only keep the empty state from lying.
+    @Published private(set) var allDayEvents: [CalendarEvent] = []
 
     deinit {
         refreshTask?.cancel()
@@ -96,9 +99,17 @@ final class CalendarManager: ObservableObject {
             return
         }
 
+        // Re-read the list every time rather than trusting the one loaded at
+        // bootstrap: an account still syncing at launch leaves it short, and
+        // until this reads it again the app polls events of calendars it cannot
+        // see — silently showing the wrong "next" event. Selection is never
+        // pruned here, so a calendar missing for one cycle stays selected.
+        availableCalendars = store.calendars(for: .event)
+
         let calendars = selectedCalendars(using: preferences)
         guard !calendars.isEmpty else {
             events = []
+            allDayEvents = []
             Log.calendar.debug("Refresh: no calendar tracked")
             return
         }
@@ -110,11 +121,16 @@ final class CalendarManager: ObservableObject {
             calendars: calendars
         )
 
-        events = store.events(matching: predicate)
-            .filter { !$0.isAllDay }
+        let fetched = store.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
-            .map(Self.makeEvent)
-        Log.calendar.debug("Refresh: \(self.events.count) events in window")
+        events = fetched.filter { !$0.isAllDay }.map(Self.makeEvent)
+        allDayEvents = fetched.filter(\.isAllDay).map(Self.makeEvent)
+        Log.calendar.debug(
+            """
+            Refresh: \(self.events.count) events, \(self.allDayEvents.count) all-day, \
+            from \(calendars.count)/\(self.availableCalendars.count) calendars
+            """
+        )
     }
 
     /// The look-back has to cover the longest event that can still be running:
@@ -143,6 +159,7 @@ final class CalendarManager: ObservableObject {
     func currentSnapshot(selectedCalendarIDs: Set<String>, now: Date = .now) -> EventProgressSnapshot {
         SnapshotBuilder.computeSnapshot(
             events: events,
+            allDayEvents: allDayEvents,
             selectedCalendarIDs: selectedCalendarIDs,
             now: now,
             calendar: .current
@@ -165,6 +182,7 @@ final class CalendarManager: ObservableObject {
         refreshTask?.cancel()
         refreshTask = nil
         events = []
+        allDayEvents = []
         Log.calendar.info("Polling stopped: calendar access lost")
     }
 

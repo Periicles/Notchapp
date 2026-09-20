@@ -21,6 +21,32 @@ final class MenuBarLabelTests: XCTestCase {
         )
     }
 
+    private var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    /// 06:13 UTC on the reference day, so both events fall on the same day.
+    func test_text_countsDownABreak() {
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let snapshot = SnapshotBuilder.computeSnapshot(
+            events: [
+                CalendarEvent(identifier: "a", title: "A", startDate: now.addingTimeInterval(-3600),
+                              endDate: now.addingTimeInterval(-600), calendarIdentifier: "c", color: .blue),
+                CalendarEvent(identifier: "b", title: "B", startDate: now.addingTimeInterval(12 * 60),
+                              endDate: now.addingTimeInterval(3600), calendarIdentifier: "c", color: .blue),
+            ],
+            selectedCalendarIDs: ["c"],
+            now: now,
+            calendar: utcCalendar,
+            locale: english
+        )
+
+        XCTAssertEqual(snapshot.state, .onBreak)
+        XCTAssertEqual(MenuBarLabel.text(for: snapshot, enabled: true, locale: english), "12 min")
+    }
+
     // MARK: - Nothing to count down
 
     func test_text_isNil_whenNoRemainingSeconds() {

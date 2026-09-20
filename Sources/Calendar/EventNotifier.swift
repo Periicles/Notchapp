@@ -7,7 +7,11 @@ import Foundation
 /// is cheap to recompute, the calendar can change underneath us at any time, and
 /// a stale "starts in 5 min" for a cancelled event is worse than a rewrite.
 @MainActor
-final class EventNotifier {
+final class EventNotifier: ObservableObject {
+    /// What the system last answered. Published so the settings panel can say
+    /// so instead of leaving an ineffective toggle switched on.
+    @Published private(set) var authorizationState: NotificationAuthorization.State = .undetermined
+
     /// `UNUserNotificationCenter.current()` needs a real application bundle: it
     /// throws `bundleProxyForCurrentProcess is nil` otherwise, which is what
     /// `swift run` gives you. Hence `lazy` — as a stored property it would be
@@ -22,6 +26,9 @@ final class EventNotifier {
 
         guard preferences.notifiesBeforeEvents else {
             center.removeAllPendingNotificationRequests()
+            authorizationState = NotificationAuthorization.state(
+                for: await center.notificationSettings().authorizationStatus
+            )
             return
         }
 
@@ -41,17 +48,26 @@ final class EventNotifier {
     }
 
     private func isAuthorized() async -> Bool {
-        switch await center.notificationSettings().authorizationStatus {
-        case .authorized, .provisional:
+        let status = await center.notificationSettings().authorizationStatus
+        Log.notifications.debug("Authorization status: \(status.rawValue, privacy: .public)")
+        authorizationState = NotificationAuthorization.state(for: status)
+
+        switch authorizationState {
+        case .allowed:
             return true
-        case .notDetermined:
+        case .undetermined:
             do {
-                return try await center.requestAuthorization(options: [.alert, .sound])
+                let granted = try await center.requestAuthorization(options: [.alert, .sound])
+                authorizationState = granted ? .allowed : .blocked
+                return granted
             } catch {
                 Log.notifications.error("Authorization request failed: \(error.localizedDescription, privacy: .public)")
+                authorizationState = .blocked
                 return false
             }
-        default:
+        case .blocked:
+            // macOS never re-prompts once refused, so the only way out is the
+            // Notifications pane — which is what the settings panel now offers.
             Log.notifications.info("Notifications not permitted")
             return false
         }

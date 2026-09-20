@@ -4,6 +4,7 @@ import SwiftUI
 struct EventProgressSnapshot: Equatable {
     enum State: Equatable {
         case inProgress
+        case onBreak
         case startingSoon
         case upcomingToday
         case upcomingLater
@@ -27,6 +28,20 @@ struct EventProgressSnapshot: Equatable {
     /// need their own presentation (the menu-bar countdown) build from. `nil`
     /// whenever no event is in progress.
     var remainingSeconds: Int?
+    /// Other tracked events running at the same time as the one shown.
+    var concurrentEventCount = 0
+    /// The tracked event after the current one or the break, when it starts
+    /// later today.
+    var nextEvent: NextEvent?
+    /// Tracked all-day events covering now, for the states whose layout has room
+    /// to name them. `nil` while an event or a break is running.
+    var allDayMessage: String?
+
+    /// Kept in parts so the panel can shorten the title and never the time.
+    struct NextEvent: Equatable {
+        let title: String
+        let startTimeLabel: String
+    }
 
     static func noCalendar(locale: Locale = .current) -> EventProgressSnapshot {
         EventProgressSnapshot(
@@ -43,8 +58,13 @@ struct EventProgressSnapshot: Equatable {
         )
     }
 
-    static func emptyToday(locale: Locale = .current) -> EventProgressSnapshot {
-        EventProgressSnapshot(
+    /// `allDayTitles`: tracked all-day events covering now. They never take the
+    /// panel over, but without them a day off reads as "no event today".
+    static func emptyToday(locale: Locale = .current, allDayTitles: [String] = []) -> EventProgressSnapshot {
+        let message = allDayMessage(for: allDayTitles, locale: locale)
+            ?? Localized.string("No event today", locale: locale)
+
+        return EventProgressSnapshot(
             title: "",
             progress: 0,
             startTimeLabel: "",
@@ -52,10 +72,18 @@ struct EventProgressSnapshot: Equatable {
             elapsedLabel: "",
             remainingLabel: "",
             statusLabel: "",
-            secondaryMessage: Localized.string("No event today", locale: locale),
+            secondaryMessage: message,
             tint: Color.secondary.opacity(0.35),
             state: .emptyToday
         )
+    }
+
+    /// `All day: <title>`, with `+N` for the ones it does not name.
+    static func allDayMessage(for titles: [String], locale: Locale = .current) -> String? {
+        guard let first = titles.first else { return nil }
+        let extra = titles.count - 1
+        let joined = extra > 0 ? "\(first) +\(extra)" : first
+        return Localized.string("All day: \(joined)", locale: locale)
     }
 
     static func accessRevoked(locale: Locale = .current) -> EventProgressSnapshot {
@@ -86,6 +114,12 @@ final class EventProgressModel: ObservableObject {
 
     /// Compact countdown for the menu bar — the only surface that shows anything
     /// while the panel is closed. `nil` hides it entirely.
+    /// Fraction of the at-rest line to fill, or `nil` when it is off or there is
+    /// nothing running.
+    var restingProgress: Double? {
+        RestingProgressLine.progress(for: snapshot, enabled: preferences?.showsRestingProgressLine ?? false)
+    }
+
     var menuBarText: String? {
         MenuBarLabel.text(for: snapshot, enabled: preferences?.showsMenuBarCountdown ?? false)
     }
@@ -108,7 +142,9 @@ final class EventProgressModel: ObservableObject {
         idleTask?.cancel()
         idleTask = nil
 
-        guard !isHoverVisible, preferences?.showsMenuBarCountdown == true else { return }
+        let needsIdleTick = preferences?.showsMenuBarCountdown == true
+            || preferences?.showsRestingProgressLine == true
+        guard !isHoverVisible, needsIdleTick else { return }
 
         // Matches CalendarManager's polling cadence: the label can never be more
         // than one calendar poll behind, and it rounds to the minute anyway.
@@ -158,6 +194,11 @@ final class EventProgressModel: ObservableObject {
 
     private func updateSnapshot(_ newSnapshot: EventProgressSnapshot) {
         guard newSnapshot != snapshot else { return }
+        if newSnapshot.state != snapshot.state || newSnapshot.title != snapshot.title {
+            // The one line that says what the panel is actually showing, so a
+            // report of "it shows the wrong event" is diagnosable after the fact.
+            Log.panel.debug("Snapshot: \(String(describing: newSnapshot.state), privacy: .public)")
+        }
         snapshot = newSnapshot
     }
 

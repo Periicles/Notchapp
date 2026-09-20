@@ -16,12 +16,29 @@ final class LocalizationTests: XCTestCase {
     }
 
     func test_frenchFormatString_resolves() {
-        let value = Localized.string("Next event in: \("01:02:03:04")", locale: Locale(identifier: "fr"))
-        XCTAssertEqual(value, "Prochain événement dans : 01:02:03:04")
+        let value = Localized.string("All day: \("Férié")", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Toute la journée : Férié")
     }
 
     func test_frenchAccessRevoked_resolves() {
         let value = Localized.string("Calendar access is off — re-enable in Settings", locale: Locale(identifier: "fr"))
         XCTAssertEqual(value, "Accès au calendrier désactivé — réactivez-le dans les Réglages")
+    }
+
+    func test_frenchThenPrefix_resolves() {
+        XCTAssertEqual(Localized.string("Then:", locale: Locale(identifier: "fr")), "Ensuite :")
+    }
+
+    func test_frenchUpdateAvailable_resolves() {
+        let value = Localized.string("Version \("0.4.0") available", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Version 0.4.0 disponible")
+    }
+
+    func test_frenchBlockedNotifications_resolves() {
+        let value = Localized.string(
+            "Notifications are blocked for NotchBar in System Settings.",
+            locale: Locale(identifier: "fr")
+        )
+        XCTAssertEqual(value, "Les notifications de NotchBar sont bloquées dans les Réglages Système.")
     }
 }

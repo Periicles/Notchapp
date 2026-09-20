@@ -6,21 +6,29 @@ final class NotchPanelController: NSObject {
     private let calendarManager: CalendarManager
     private let progressModel: EventProgressModel
     private let preferences: Preferences
+    private let updateChecker: UpdateChecker
+    private let notifier: EventNotifier
 
     private let panel: NotchPanelWindow
     private let sensorPanel: NotchPanelWindow
     private var hostingView: NSHostingView<NotchPanelView>!
     private let settingsPopover = NSPopover()
     private lazy var settingsContentController: NSHostingController<SettingsView> = {
-        NSHostingController(
+        // The popover follows the view instead of a hard-coded size: every new
+        // settings row used to eat into a fixed 300pt and would eventually clip.
+        let controller = NSHostingController(
             rootView: SettingsView(
                 preferences: preferences,
                 calendarManager: calendarManager,
+                updateChecker: updateChecker,
+                notifier: notifier,
                 onPreferencesChanged: { [weak self] in
                     self?.handlePreferencesChanged()
                 }
             )
         )
+        controller.sizingOptions = [.preferredContentSize]
+        return controller
     }()
     private var hideWorkItem: DispatchWorkItem?
     // nonisolated(unsafe): only written/read on MainActor; nonisolated to allow deinit cleanup
@@ -29,11 +37,15 @@ final class NotchPanelController: NSObject {
     init(
         calendarManager: CalendarManager,
         progressModel: EventProgressModel,
-        preferences: Preferences
+        preferences: Preferences,
+        updateChecker: UpdateChecker,
+        notifier: EventNotifier
     ) {
         self.calendarManager = calendarManager
         self.progressModel = progressModel
         self.preferences = preferences
+        self.updateChecker = updateChecker
+        self.notifier = notifier
 
         let contentRect = ScreenHelper.panelRect()
         panel = NotchPanelWindow(
@@ -160,7 +172,6 @@ final class NotchPanelController: NSObject {
 
         if settingsPopover.contentViewController !== settingsContentController {
             settingsPopover.behavior = .transient
-            settingsPopover.contentSize = NSSize(width: 320, height: 300)
             settingsPopover.contentViewController = settingsContentController
         }
 

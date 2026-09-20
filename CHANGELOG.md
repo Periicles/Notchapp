@@ -5,6 +5,59 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Check for Updates** in Settings. A `.dmg` install had no way to learn that a
+  newer version existed; the button now asks GitHub where `releases/latest`
+  redirects and, when that tag is newer than the running version, links to its
+  release page. The check runs only when pressed — NotchBar still makes no
+  network request on its own — which is why the app now carries the
+  `com.apple.security.network.client` entitlement.
+- **A progress line under the notch** (off by default). It fills with the
+  running event's — or the break's — progress, in the event's colour. Anything
+  drawn at rest slides with the desktop during an interactive Space switch,
+  which no window setting prevents, so it is opt-in.
+- **Breaks.** Between two tracked events of the same day, up to 2 hours apart,
+  the panel shows a grey `Break` with its own progress bar and the time left —
+  also in the menu-bar countdown — instead of a plain "next event" line.
+- **All-day events are named in every waiting state**, not only when the day is
+  otherwise empty: `All day: <title>` sits under the message.
+- **What comes next.** While an event or a break runs, the metrics row names the
+  next tracked event later today (`→ Maths 14:00`).
+
+### Changed
+
+- **Events days away name their day** — `Next: Conf — Tue 9:00`, or `tomorrow
+  9:00` — instead of the `DD:HH:MM:SS` countdown, which was hard to read and
+  redrew every second.
+
+### Fixed
+
+- **The notification toggle could be on while macOS blocked every
+  notification**, with nothing said. macOS records a refusal for good and never
+  prompts again, so an app that only ever asks leaves the switch promising
+  something that cannot happen. Settings now states it and offers a button to
+  the Notifications pane; the exact system answer is logged.
+
+- **The panel could name the wrong next event for hours.** The list of
+  calendars was read at launch and then only on a calendar-store notification,
+  while the 30-second poll reused it as-is. An account still syncing when
+  NotchBar starts left that list short, so the app kept polling events of
+  calendars it could not see and showed whatever came next among the rest.
+  The list is now re-read on every refresh; the calendar selection is still
+  only pruned on a store change, so a calendar missing for one cycle is never
+  unselected. Each refresh and each state change now logs what was seen, so a
+  wrong-event report is diagnosable after the fact.
+
+- **Overlapping events**: the panel showed whichever running event started
+  first and gave no hint of the others. It now shows the one ending first, with
+  a `+N` for the rest.
+- **A day with only all-day events said "No event today".** The empty state
+  now names them (`All day: Holiday`). They still never take over the panel.
+- **Panel times ignored the locale** the rest of the snapshot was built with.
+
 ## [0.3.3] - 2026-08-31
 
 ### Fixed

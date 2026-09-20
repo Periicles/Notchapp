@@ -51,8 +51,13 @@ echo "==> Verifying the app can find its resources"
 # The app resolves localized strings from Contents/Resources. When this bundle
 # is missing, every string silently degrades to its key — or the app traps at
 # launch if anything still reaches for SwiftPM's Bundle.module.
+# Two layouts exist for that bundle: flat (Swift 6.1, what CI builds with) and
+# wrapped in Contents/Resources (Swift 6.3). Accept either, or the script fails
+# on a developer machine whose toolchain is ahead of CI's.
+BUNDLE="$CONTENTS/Resources/${APP_NAME}_${APP_NAME}.bundle"
 for lproj in en fr; do
-  test -f "$CONTENTS/Resources/${APP_NAME}_${APP_NAME}.bundle/$lproj.lproj/Localizable.strings" \
+  test -f "$BUNDLE/$lproj.lproj/Localizable.strings" \
+    || test -f "$BUNDLE/Contents/Resources/$lproj.lproj/Localizable.strings" \
     || { echo "error: $lproj.lproj missing from the packaged resource bundle" >&2; exit 1; }
 done
 

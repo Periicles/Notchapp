@@ -30,6 +30,16 @@ struct NotchPanelView: View {
                 .offset(y: isExpanded ? 0 : motion.collapsedOffsetY)
                 .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
+        .overlay(alignment: .top) {
+            // Sits just below the closed notch, the only place a line reads as
+            // belonging to it rather than floating on the desktop.
+            if !isExpanded, let progress = progressModel.restingProgress {
+                RestingProgressLineView(progress: progress, tint: progressModel.snapshot.tint)
+                    .frame(width: ScreenHelper.collapsedWidth())
+                    .offset(y: ScreenHelper.closedHeight())
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             SettingsOrbButton(action: onSettingsTapped)
                 .padding(.top, NotchPanelMetrics.orbTopPadding)
@@ -66,13 +76,16 @@ struct NotchContentView: View {
 
         Group {
             switch snapshot.state {
-            case .inProgress:
+            case .inProgress, .onBreak:
                 InProgressContent(
                     snapshot: snapshot,
                     isAnimating: progressModel.isHoverVisible && shimmerEnabled
                 )
             case .startingSoon, .upcomingToday, .upcomingLater, .emptyToday, .noCalendar, .accessRevoked:
-                SecondaryContent(message: snapshot.secondaryMessage ?? "")
+                SecondaryContent(
+                    message: snapshot.secondaryMessage ?? "",
+                    allDayMessage: snapshot.allDayMessage
+                )
             }
         }
         .padding(.horizontal, NotchPanelMetrics.contentHorizontalPadding)
@@ -95,6 +108,13 @@ private struct InProgressContent: View {
                     .lineLimit(1)
                     .foregroundStyle(.white)
 
+                if snapshot.concurrentEventCount > 0 {
+                    Text(verbatim: "+\(snapshot.concurrentEventCount)")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.42))
+                        .fixedSize()
+                }
+
                 Spacer(minLength: 0)
 
                 TimeRangeView(start: snapshot.startTimeLabel, end: snapshot.endTimeLabel)
@@ -106,30 +126,74 @@ private struct InProgressContent: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 13)
 
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     MetricLabel(titleKey: "Elapsed", value: snapshot.elapsedLabel)
+                        .fixedSize()
 
                     Spacer(minLength: 0)
 
+                    if let nextEvent = snapshot.nextEvent {
+                        // Ahead of the spacers, which otherwise claim the room
+                        // the title needs and truncate even a short one.
+                        NextEventLabel(nextEvent: nextEvent)
+                            .layoutPriority(1)
+
+                        Spacer(minLength: 0)
+                    }
+
                     MetricLabel(titleKey: "Remaining", value: snapshot.remainingLabel)
+                        .fixedSize()
                 }
             }
         }
     }
 }
 
-private struct SecondaryContent: View {
-    let message: String
+/// `→ <title> <time>`: only the title gives way when space runs out. An arrow
+/// rather than a word, because the row already carries two labelled metrics.
+private struct NextEventLabel: View {
+    let nextEvent: EventProgressSnapshot.NextEvent
 
     var body: some View {
-        VStack {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.right")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white.opacity(0.42))
+                .accessibilityLabel(Text("Then:", bundle: Localized.resources))
+            Text(nextEvent.title)
+                .lineLimit(1)
+                .foregroundStyle(.white.opacity(0.78))
+            Text(nextEvent.startTimeLabel)
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.78))
+                .fixedSize()
+        }
+        .font(.system(size: 13, weight: .medium, design: .rounded))
+    }
+}
+
+private struct SecondaryContent: View {
+    let message: String
+    var allDayMessage: String?
+
+    var body: some View {
+        VStack(spacing: 6) {
             Spacer(minLength: 0)
             Text(message)
                 .font(.system(size: 17, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.78))
                 .multilineTextAlignment(.center)
-                .lineLimit(3)
+                .lineLimit(2)
                 .padding(.trailing, 46)
+
+            if let allDayMessage {
+                Text(allDayMessage)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .padding(.trailing, 46)
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

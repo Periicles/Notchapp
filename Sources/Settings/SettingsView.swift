@@ -6,6 +6,8 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var preferences: Preferences
     @ObservedObject var calendarManager: CalendarManager
+    @ObservedObject var updateChecker: UpdateChecker
+    @ObservedObject var notifier: EventNotifier
     let onPreferencesChanged: () -> Void
 
     @State private var launchAtLoginEnabled = false
@@ -59,6 +61,12 @@ struct SettingsView: View {
 
             settingRow("Notify me 5 minutes before an event starts or ends", isOn: $preferences.notifiesBeforeEvents)
 
+            if preferences.notifiesBeforeEvents, notifier.authorizationState == .blocked {
+                blockedNotificationsNote
+            }
+
+            settingRow("Show a progress line under the notch", isOn: $preferences.showsRestingProgressLine)
+
             settingRow("Launch at login", isOn: $launchAtLoginEnabled)
                 .onChange(of: launchAtLoginEnabled) { _, newValue in
                     setLaunchAtLogin(newValue)
@@ -66,6 +74,8 @@ struct SettingsView: View {
                 .onAppear {
                     launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
                 }
+
+            updateRow
 
             Divider()
                 .padding(.top, 2)
@@ -93,6 +103,26 @@ struct SettingsView: View {
         .onChange(of: preferences.notifiesBeforeEvents) { _, _ in
             onPreferencesChanged()
         }
+        .onChange(of: preferences.showsRestingProgressLine) { _, _ in
+            onPreferencesChanged()
+        }
+    }
+
+    /// macOS only ever asks once. After a refusal the toggle above promises
+    /// something that never happens unless the user is told where to undo it.
+    private var blockedNotificationsNote: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Notifications are blocked for NotchBar in System Settings.", bundle: Localized.resources)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                NSWorkspace.shared.open(NotificationAuthorization.systemSettingsURL)
+            } label: {
+                Text("Open System Settings", bundle: Localized.resources)
+            }
+        }
     }
 
     /// One settings line: label flush left, control flush right. A plain
@@ -107,6 +137,47 @@ struct SettingsView: View {
             Toggle("", isOn: isOn)
                 .toggleStyle(.switch)
                 .labelsHidden()
+        }
+    }
+
+    /// The status goes under the button rather than beside it: side by side,
+    /// the French label and a long version string cannot share 292pt.
+    private var updateRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button {
+                Task { await updateChecker.check() }
+            } label: {
+                Text("Check for Updates", bundle: Localized.resources)
+            }
+            .disabled(!updateChecker.canCheck)
+
+            updateStatus
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatus: some View {
+        switch updateChecker.state {
+        case .idle:
+            EmptyView()
+        case .checking:
+            ProgressView()
+                .controlSize(.mini)
+        case .upToDate:
+            Text("Up to date", bundle: Localized.resources)
+        case .failed:
+            Text("Couldn't check", bundle: Localized.resources)
+        case let .available(version, releasePage):
+            Button {
+                NSWorkspace.shared.open(releasePage)
+            } label: {
+                Text("Version \(version.description) available", bundle: Localized.resources)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
         }
     }
 
