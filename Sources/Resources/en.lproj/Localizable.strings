@@ -5,6 +5,8 @@
 "All day: %@" = "All day: %@";
 "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars." = "Calendar access is disabled. Enable it in System Settings > Privacy & Security > Calendars.";
 "Calendar access is off — re-enable in Settings" = "Calendar access is off — re-enable in Settings";
+"Check for Updates" = "Check for Updates";
+"Couldn't check" = "Couldn't check";
 "Current Meeting" = "Current Meeting";
 "Elapsed" = "Elapsed";
 "Ends in %lld min" = "Ends in %lld min";
@@ -27,7 +29,9 @@
 "Starts now — %@" = "Starts now — %@";
 "Starts soon" = "Starts soon";
 "Tracked Calendars" = "Tracked Calendars";
+"Up to date" = "Up to date";
 "Upcoming Meeting" = "Upcoming Meeting";
 "Upcoming today" = "Upcoming today";
 "Upcoming" = "Upcoming";
+"Version %@ available" = "Version %@ available";
 "tomorrow %@" = "tomorrow %@";

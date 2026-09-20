@@ -24,4 +24,9 @@ final class LocalizationTests: XCTestCase {
         let value = Localized.string("Calendar access is off — re-enable in Settings", locale: Locale(identifier: "fr"))
         XCTAssertEqual(value, "Accès au calendrier désactivé — réactivez-le dans les Réglages")
     }
+
+    func test_frenchUpdateAvailable_resolves() {
+        let value = Localized.string("Version \("0.4.0") available", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Version 0.4.0 disponible")
+    }
 }
