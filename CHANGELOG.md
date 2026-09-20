@@ -16,6 +16,8 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Breaks.** Between two tracked events of the same day, up to 2 hours apart,
   the panel shows a grey `Break` with its own progress bar and the time left —
   also in the menu-bar countdown — instead of a plain "next event" line.
+- **All-day events are named in every waiting state**, not only when the day is
+  otherwise empty: `All day: <title>` sits under the message.
 - **What comes next.** While an event or a break runs, the metrics row names the
   next tracked event later today (`→ Maths 14:00`).
 
@@ -26,6 +28,16 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   redrew every second.
 
 ### Fixed
+
+- **The panel could name the wrong next event for hours.** The list of
+  calendars was read at launch and then only on a calendar-store notification,
+  while the 30-second poll reused it as-is. An account still syncing when
+  NotchBar starts left that list short, so the app kept polling events of
+  calendars it could not see and showed whatever came next among the rest.
+  The list is now re-read on every refresh; the calendar selection is still
+  only pruned on a store change, so a calendar missing for one cycle is never
+  unselected. Each refresh and each state change now logs what was seen, so a
+  wrong-event report is diagnosable after the fact.
 
 - **Overlapping events**: the panel showed whichever running event started
   first and gave no hint of the others. It now shows the one ending first, with
