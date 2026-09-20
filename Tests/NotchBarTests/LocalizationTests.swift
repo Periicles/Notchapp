@@ -28,4 +28,9 @@ final class LocalizationTests: XCTestCase {
     func test_frenchThenPrefix_resolves() {
         XCTAssertEqual(Localized.string("Then:", locale: Locale(identifier: "fr")), "Ensuite :")
     }
+
+    func test_frenchUpdateAvailable_resolves() {
+        let value = Localized.string("Version \("0.4.0") available", locale: Locale(identifier: "fr"))
+        XCTAssertEqual(value, "Version 0.4.0 disponible")
+    }
 }
