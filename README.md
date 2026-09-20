@@ -25,10 +25,10 @@ Minimalist macOS app that uses the physical notch to show progress on the curren
 | **Upcoming today** | Next event later today | `Next: <title> in Xh Ymin` |
 | **Upcoming** | Next event is beyond today (up to 7 days out) | `Next: <title> — tomorrow 9:00`, or the weekday past tomorrow (`Tue 9:00`) |
 | **Empty today** | No events found | `No event today`, or `All day: <title>` when a tracked all-day event covers today |
-
-Every waiting state — *Starting soon*, *Upcoming today*, *Upcoming* — also carries `All day: <title>` under its message when a tracked all-day event covers today. The in-progress and break layouts do not: their row is full.
 | **No calendar** | No calendars selected | `Pick a calendar in Settings` |
 | **Access off** | Calendar access denied or revoked | `Calendar access is off — re-enable in Settings` |
+
+Every waiting state — *Starting soon*, *Upcoming today*, *Upcoming* — also carries `All day: <title>` under its message when a tracked all-day event covers today. The in-progress and break layouts do not: their row is full.
 
 ## Project layout
 
