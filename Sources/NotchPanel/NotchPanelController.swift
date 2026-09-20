@@ -6,6 +6,7 @@ final class NotchPanelController: NSObject {
     private let calendarManager: CalendarManager
     private let progressModel: EventProgressModel
     private let preferences: Preferences
+    private let updateChecker: UpdateChecker
     private let notifier: EventNotifier
 
     private let panel: NotchPanelWindow
@@ -19,6 +20,7 @@ final class NotchPanelController: NSObject {
             rootView: SettingsView(
                 preferences: preferences,
                 calendarManager: calendarManager,
+                updateChecker: updateChecker,
                 notifier: notifier,
                 onPreferencesChanged: { [weak self] in
                     self?.handlePreferencesChanged()
@@ -36,11 +38,13 @@ final class NotchPanelController: NSObject {
         calendarManager: CalendarManager,
         progressModel: EventProgressModel,
         preferences: Preferences,
+        updateChecker: UpdateChecker,
         notifier: EventNotifier
     ) {
         self.calendarManager = calendarManager
         self.progressModel = progressModel
         self.preferences = preferences
+        self.updateChecker = updateChecker
         self.notifier = notifier
 
         let contentRect = ScreenHelper.panelRect()
