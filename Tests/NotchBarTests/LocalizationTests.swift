@@ -28,4 +28,12 @@ final class LocalizationTests: XCTestCase {
     func test_frenchThenPrefix_resolves() {
         XCTAssertEqual(Localized.string("Then:", locale: Locale(identifier: "fr")), "Ensuite :")
     }
+
+    func test_frenchBlockedNotifications_resolves() {
+        let value = Localized.string(
+            "Notifications are blocked for NotchBar in System Settings.",
+            locale: Locale(identifier: "fr")
+        )
+        XCTAssertEqual(value, "Les notifications de NotchBar sont bloquées dans les Réglages Système.")
+    }
 }
