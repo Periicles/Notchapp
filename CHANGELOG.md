@@ -5,6 +5,31 @@ All notable changes to NotchBar are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The resting progress line now follows the notch's contour.** Instead of a flat
+  line under the notch, progress runs down its left side, round the lower corners
+  and up its right side. macOS only exposes the notch's bounding box, so the
+  corner radii and side inset (`NotchPanelMetrics`) are calibrated by eye.
+- **Neon look for the progress bars.** The filled part of the resting line and of
+  the open panel's bar now has rounded ends (line only), a glow in the event's
+  colour, and the bar a bright tip marking the current position. The resting line
+  is 4pt thick instead of 3.
+
+### Fixed
+
+- **The physical notch cut the panel's title and the progress line.** The open
+  panel's content started at a fixed 28pt from the top of the window — above the
+  lower edge of the notch (32pt on a 14" MacBook Pro, 38pt on a 16"), whose
+  cut-out displays nothing — so a title running under it lost its top. The
+  progress line drawn under the closed notch ignored the 2pt the window pokes
+  above the screen and sat partly inside the notch. The content now starts below
+  the screen's real notch height (read from `safeAreaInsets.top`, so it follows
+  the chosen resolution), and the window grows by what the notch takes rather
+  than squeezing the layout.
+
 ## [0.4.0] - 2026-09-21
 
 ### Added

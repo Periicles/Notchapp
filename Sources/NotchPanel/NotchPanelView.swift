@@ -4,11 +4,16 @@ import SwiftUI
 struct NotchPanelView: View {
     @ObservedObject var progressModel: EventProgressModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // Bumped when the display configuration changes. The geometry below is read
+    // from the screen on every evaluation, but nothing else invalidates this
+    // body when only the notch height changes (e.g. another scaled resolution).
+    @State private var screenRevision = 0
     let onSettingsTapped: () -> Void
 
     var body: some View {
         let isExpanded = progressModel.isHoverVisible
         let motion = PanelMotionStyle(reduceMotion: reduceMotion)
+        let panelHeight = ScreenHelper.panelHeight
 
         ZStack(alignment: .top) {
             // Invisible at rest: on a notched Mac the physical notch already shows
@@ -18,12 +23,17 @@ struct NotchPanelView: View {
             NotchSurface(isExpanded: isExpanded)
                 .frame(
                     width: isExpanded ? ScreenHelper.panelWidth : ScreenHelper.collapsedWidth(),
-                    height: isExpanded ? ScreenHelper.openNotchSize.height : ScreenHelper.closedHeight()
+                    height: isExpanded ? panelHeight : ScreenHelper.closedHeight()
                 )
                 .opacity(isExpanded ? 1 : 0)
 
-            NotchContentView(progressModel: progressModel, shimmerEnabled: motion.shimmerEnabled)
-                .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
+            NotchContentView(
+                progressModel: progressModel,
+                shimmerEnabled: motion.shimmerEnabled,
+                topInset: ScreenHelper.contentTopInset,
+                height: panelHeight
+            )
+                .frame(width: ScreenHelper.panelWidth, height: panelHeight)
                 .opacity(isExpanded ? 1 : 0)
                 .blur(radius: isExpanded ? 0 : motion.collapsedBlur)
                 .scaleEffect(isExpanded ? 1 : motion.collapsedScale, anchor: .top)
@@ -31,12 +41,16 @@ struct NotchPanelView: View {
                 .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
         .overlay(alignment: .top) {
-            // Sits just below the closed notch, the only place a line reads as
-            // belonging to it rather than floating on the desktop.
+            // Wraps the closed notch, the only place a line reads as belonging
+            // to it rather than floating on the desktop.
             if !isExpanded, let progress = progressModel.restingProgress {
+                let outlineSize = NotchPanelMetrics.notchOutlineSize(
+                    notchSize: CGSize(width: ScreenHelper.collapsedWidth(), height: ScreenHelper.closedHeight()),
+                    lineWidth: RestingProgressLine.height
+                )
                 RestingProgressLineView(progress: progress, tint: progressModel.snapshot.tint)
-                    .frame(width: ScreenHelper.collapsedWidth())
-                    .offset(y: ScreenHelper.closedHeight())
+                    .frame(width: outlineSize.width, height: outlineSize.height)
+                    .offset(x: ScreenHelper.notchCenterOffset(), y: ScreenHelper.panelTopBleed)
                     .allowsHitTesting(false)
             }
         }
@@ -61,15 +75,26 @@ struct NotchPanelView: View {
                 .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
             }
         }
-        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.panelHeight, alignment: .top)
+        .frame(width: ScreenHelper.panelWidth, height: panelHeight, alignment: .top)
         .compositingGroup()
         .animation(motion.containerAnimation, value: isExpanded)
+        .onReceive(screenChanges) { _ in
+            screenRevision &+= 1
+        }
+    }
+
+    private var screenChanges: NotificationCenter.Publisher {
+        NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
     }
 }
 
 struct NotchContentView: View {
     @ObservedObject var progressModel: EventProgressModel
     let shimmerEnabled: Bool
+    /// Distance from the top of the window to where the content may start: the
+    /// notch's lower edge plus a small gap. Anything above it is cut by the notch.
+    let topInset: CGFloat
+    let height: CGFloat
 
     var body: some View {
         let snapshot = progressModel.snapshot
@@ -89,9 +114,9 @@ struct NotchContentView: View {
             }
         }
         .padding(.horizontal, NotchPanelMetrics.contentHorizontalPadding)
-        .padding(.top, 28)
+        .padding(.top, topInset)
         .padding(.bottom, 22)
-        .frame(width: ScreenHelper.panelWidth, height: ScreenHelper.openNotchSize.height)
+        .frame(width: ScreenHelper.panelWidth, height: height)
         .allowsHitTesting(false)
     }
 }

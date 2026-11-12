@@ -1,12 +1,23 @@
 import AppKit
 
 enum ScreenHelper {
-    // Deployed (hover-expanded) panel size, 25% smaller than the original 640×190.
-    static let openNotchSize = CGSize(width: 480, height: 143)
-    static let panelWidth: CGFloat = openNotchSize.width
-    static let panelHeight: CGFloat = openNotchSize.height
+    // Deployed (hover-expanded) panel width, 25% smaller than the original 640×190.
+    static let panelWidth: CGFloat = 480
+    /// How far the panel window pokes above the top of the screen.
     static let panelTopBleed: CGFloat = 2
     private static let closedNotchFallbackSize = CGSize(width: 185, height: 32)
+
+    /// Deployed panel height. It follows the screen's notch height: the content
+    /// area keeps a fixed size and the window grows by whatever the notch takes.
+    static var panelHeight: CGFloat {
+        NotchPanelMetrics.panelHeight(notchHeight: closedHeight(), topBleed: panelTopBleed)
+    }
+
+    /// Inset the open panel's content keeps from the window's top so that it
+    /// starts below the notch rather than being cut by it.
+    static var contentTopInset: CGFloat {
+        NotchPanelMetrics.contentTopInset(notchHeight: closedHeight(), topBleed: panelTopBleed)
+    }
 
     static func panelRect() -> NSRect {
         let screenFrame = preferredScreen().frame
@@ -27,6 +38,19 @@ enum ScreenHelper {
             width: closedRect.width,
             height: closedRect.height
         )
+    }
+
+    /// How far the physical notch's centre sits right of the screen's centre.
+    /// The two menu bar areas on either side are rarely the same width, so the
+    /// notch is off-centre by a fraction of a point — enough to open a visible
+    /// gap on one side of anything drawn tight around it.
+    static func notchCenterOffset() -> CGFloat {
+        let screen = preferredScreen()
+        guard let topLeftArea = screen.auxiliaryTopLeftArea,
+              let topRightArea = screen.auxiliaryTopRightArea else {
+            return 0
+        }
+        return (topLeftArea.maxX + topRightArea.minX) / 2 - screen.frame.midX
     }
 
     static func collapsedWidth() -> CGFloat {
