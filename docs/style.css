@@ -30,6 +30,13 @@ header.site,footer.site{max-width:var(--max);margin:0 auto;padding:22px 24px;
 .hero h1{font-size:clamp(44px,8vw,92px);font-weight:850;letter-spacing:-.045em;line-height:.9;margin:0 0 20px}
 .hero .sub{color:var(--muted);font-size:17px;max-width:42ch;margin:0 0 24px}
 .hero-stage{display:flex;align-items:center}
+/* The real screenshot, revealed by main.js only once it actually loads. Until
+   docs/assets/hero.png exists — or with JS off — it stays hidden and the CSS
+   mock below is what the page shows. No broken image, ever. */
+.hero-shot{width:100%;height:auto;border-radius:14px;
+  box-shadow:0 30px 60px -34px rgba(0,0,0,.6)}
+.hero-shot:not([hidden]){display:block}
+.hero-shot:not([hidden]) + .desktop{display:none}
 
 .desktop{position:relative;width:100%;border-radius:14px 14px 10px 10px;overflow:hidden;
   background:radial-gradient(120% 90% at 20% -10%,#1a2340 0,rgba(26,35,64,0) 55%),
