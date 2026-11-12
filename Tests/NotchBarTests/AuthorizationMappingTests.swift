@@ -1,6 +1,6 @@
 import EventKit
-import XCTest
 @testable import NotchBar
+import XCTest
 
 @MainActor
 final class AuthorizationMappingTests: XCTestCase {

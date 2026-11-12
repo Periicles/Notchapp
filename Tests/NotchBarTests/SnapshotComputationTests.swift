@@ -1,6 +1,6 @@
-import XCTest
-import SwiftUI
 @testable import NotchBar
+import SwiftUI
+import XCTest
 
 @MainActor
 final class SnapshotComputationTests: XCTestCase {
@@ -119,7 +119,7 @@ final class SnapshotComputationTests: XCTestCase {
             events: [
                 makeEvent(title: "Wrong cal", startOffset: -60, durationSeconds: 1800,
                           calendarID: otherCalendarID, relativeTo: now),
-                makeEvent(title: "Right cal", startOffset: -120, durationSeconds: 1800, relativeTo: now)
+                makeEvent(title: "Right cal", startOffset: -120, durationSeconds: 1800, relativeTo: now),
             ],
             selectedCalendarIDs: [calendarID],
             now: now,
@@ -353,7 +353,7 @@ final class SnapshotComputationTests: XCTestCase {
         let snapshot = SnapshotBuilder.computeSnapshot(
             events: [
                 makeEvent(startOffset: -60, durationSeconds: 1800,
-                          calendarID: otherCalendarID, relativeTo: now)
+                          calendarID: otherCalendarID, relativeTo: now),
             ],
             selectedCalendarIDs: [calendarID],
             now: now,

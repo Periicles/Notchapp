@@ -1,6 +1,6 @@
+@testable import NotchBar
 import SwiftUI
 import XCTest
-@testable import NotchBar
 
 final class MenuBarLabelTests: XCTestCase {
     private let english = Locale(identifier: "en")

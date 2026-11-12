@@ -32,7 +32,7 @@ final class NotchPanelController: NSObject {
     }()
     private var hideWorkItem: DispatchWorkItem?
     // nonisolated(unsafe): only written/read on MainActor; nonisolated to allow deinit cleanup
-    private nonisolated(unsafe) var closeMonitor: Any?
+    nonisolated(unsafe) private var closeMonitor: Any?
 
     init(
         calendarManager: CalendarManager,

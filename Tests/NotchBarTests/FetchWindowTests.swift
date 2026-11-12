@@ -1,5 +1,5 @@
-import XCTest
 @testable import NotchBar
+import XCTest
 
 final class FetchWindowTests: XCTestCase {
     private let now = Date(timeIntervalSinceReferenceDate: 800_000_000)

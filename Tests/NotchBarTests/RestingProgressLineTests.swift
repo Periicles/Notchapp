@@ -1,6 +1,6 @@
+@testable import NotchBar
 import SwiftUI
 import XCTest
-@testable import NotchBar
 
 final class RestingProgressLineTests: XCTestCase {
     private func snapshot(state: EventProgressSnapshot.State, progress: Double) -> EventProgressSnapshot {
