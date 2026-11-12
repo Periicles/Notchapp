@@ -41,12 +41,16 @@ struct NotchPanelView: View {
                 .animation(motion.contentAnimation(isExpanded: isExpanded), value: isExpanded)
         }
         .overlay(alignment: .top) {
-            // Sits just below the closed notch, the only place a line reads as
-            // belonging to it rather than floating on the desktop.
+            // Wraps the closed notch, the only place a line reads as belonging
+            // to it rather than floating on the desktop.
             if !isExpanded, let progress = progressModel.restingProgress {
+                let outlineSize = NotchPanelMetrics.notchOutlineSize(
+                    notchSize: CGSize(width: ScreenHelper.collapsedWidth(), height: ScreenHelper.closedHeight()),
+                    lineWidth: RestingProgressLine.height
+                )
                 RestingProgressLineView(progress: progress, tint: progressModel.snapshot.tint)
-                    .frame(width: ScreenHelper.collapsedWidth())
-                    .offset(y: ScreenHelper.notchBottomEdge)
+                    .frame(width: outlineSize.width, height: outlineSize.height)
+                    .offset(x: ScreenHelper.notchCenterOffset(), y: ScreenHelper.panelTopBleed)
                     .allowsHitTesting(false)
             }
         }

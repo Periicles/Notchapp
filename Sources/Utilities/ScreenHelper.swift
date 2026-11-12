@@ -13,13 +13,6 @@ enum ScreenHelper {
         NotchPanelMetrics.panelHeight(notchHeight: closedHeight(), topBleed: panelTopBleed)
     }
 
-    /// Where the physical notch ends, measured down from the panel window's top.
-    /// The window starts `panelTopBleed` above the screen, so the notch height
-    /// alone lands that much too high — partly behind the notch.
-    static var notchBottomEdge: CGFloat {
-        NotchPanelMetrics.notchBottomEdge(notchHeight: closedHeight(), topBleed: panelTopBleed)
-    }
-
     /// Inset the open panel's content keeps from the window's top so that it
     /// starts below the notch rather than being cut by it.
     static var contentTopInset: CGFloat {
@@ -45,6 +38,19 @@ enum ScreenHelper {
             width: closedRect.width,
             height: closedRect.height
         )
+    }
+
+    /// How far the physical notch's centre sits right of the screen's centre.
+    /// The two menu bar areas on either side are rarely the same width, so the
+    /// notch is off-centre by a fraction of a point — enough to open a visible
+    /// gap on one side of anything drawn tight around it.
+    static func notchCenterOffset() -> CGFloat {
+        let screen = preferredScreen()
+        guard let topLeftArea = screen.auxiliaryTopLeftArea,
+              let topRightArea = screen.auxiliaryTopRightArea else {
+            return 0
+        }
+        return (topLeftArea.maxX + topRightArea.minX) / 2 - screen.frame.midX
     }
 
     static func collapsedWidth() -> CGFloat {

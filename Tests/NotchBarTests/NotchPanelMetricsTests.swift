@@ -70,4 +70,17 @@ final class NotchPanelMetricsTests: XCTestCase {
             NotchPanelMetrics.panelHeight(notchHeight: 32, topBleed: 2)
         )
     }
+
+    // The stroke is centred half a line width outside the notch, flares included,
+    // so the notch (which displays nothing) hides none of it.
+    func test_notchOutlineSize_wrapsTheNotchWithTheStroke() {
+        let size = NotchPanelMetrics.notchOutlineSize(notchSize: CGSize(width: 185, height: 32), lineWidth: 3)
+
+        XCTAssertEqual(
+            size.width,
+            185 - 2 * NotchPanelMetrics.notchOutlineSideInset + 3 + 2 * NotchPanelMetrics.notchOutlineTopRadius,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(size.height, 32 + 1.5, accuracy: 0.001)
+    }
 }

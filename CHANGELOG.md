@@ -7,6 +7,17 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The resting progress line now follows the notch's contour.** Instead of a flat
+  line under the notch, progress runs down its left side, round the lower corners
+  and up its right side. macOS only exposes the notch's bounding box, so the
+  corner radii and side inset (`NotchPanelMetrics`) are calibrated by eye.
+- **Neon look for the progress bars.** The filled part of the resting line and of
+  the open panel's bar now has rounded ends (line only), a glow in the event's
+  colour, and the bar a bright tip marking the current position. The resting line
+  is 4pt thick instead of 3.
+
 ### Fixed
 
 - **The physical notch cut the panel's title and the progress line.** The open

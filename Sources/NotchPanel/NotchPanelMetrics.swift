@@ -64,4 +64,30 @@ enum NotchPanelMetrics {
     static func panelHeight(notchHeight: CGFloat, topBleed: CGFloat) -> CGFloat {
         contentTopInset(notchHeight: notchHeight, topBleed: topBleed) + contentAreaHeight
     }
+
+    // MARK: - Outline hugging the notch
+    //
+    // macOS exposes the notch's bounding box, never its shape, so the two radii
+    // are calibrated by eye rather than read from the screen.
+
+    /// Radius of the flare where the notch meets the top of the screen.
+    static let notchOutlineTopRadius: CGFloat = 6
+
+    /// Radius of the notch's lower corners, measured on the stroke's centre line.
+    static let notchOutlineBottomRadius: CGFloat = 15
+
+    /// How much narrower the physical notch is, per side, than the width the
+    /// screen's menu bar areas report. Measured on a photo of the screen: without
+    /// it the stroke floats about a point off each side.
+    static let notchOutlineSideInset: CGFloat = 0.5
+
+    /// Size of the outline's box. The stroke is centred half a line width outside
+    /// the notch so that the notch hides none of it; the box starts at the top of
+    /// the screen and ends at the stroke's lower centre line.
+    static func notchOutlineSize(notchSize: CGSize, lineWidth: CGFloat) -> CGSize {
+        CGSize(
+            width: notchSize.width - 2 * notchOutlineSideInset + lineWidth + 2 * notchOutlineTopRadius,
+            height: notchSize.height + lineWidth / 2
+        )
+    }
 }
