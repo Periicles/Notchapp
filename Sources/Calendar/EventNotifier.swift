@@ -1,6 +1,39 @@
 import Foundation
 @preconcurrency import UserNotifications
 
+/// The part of the system notification centre the notifier uses, so the sync
+/// logic can run against a fake in tests.
+protocol NotificationScheduling: Sendable {
+    func authorizationStatus() async -> UNAuthorizationStatus
+    func requestAuthorization() async throws -> Bool
+    func removeAllPending()
+    func add(_ request: UNNotificationRequest) async throws
+}
+
+/// `UNUserNotificationCenter.current()` needs a real application bundle: it
+/// throws `bundleProxyForCurrentProcess is nil` otherwise, which is what
+/// `swift run` gives you. The centre is therefore looked up on each call, and
+/// `EventNotifier.isAvailable` keeps this from being reached without a bundle.
+struct SystemNotificationScheduler: NotificationScheduling {
+    private var center: UNUserNotificationCenter { .current() }
+
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await center.notificationSettings().authorizationStatus
+    }
+
+    func requestAuthorization() async throws -> Bool {
+        try await center.requestAuthorization(options: [.alert, .sound])
+    }
+
+    func removeAllPending() {
+        center.removeAllPendingNotificationRequests()
+    }
+
+    func add(_ request: UNNotificationRequest) async throws {
+        try await center.add(request)
+    }
+}
+
 /// Applies a `NotificationPlanner` plan to the system notification centre.
 ///
 /// The whole pending set is replaced on every sync rather than diffed: the plan
@@ -12,22 +45,26 @@ final class EventNotifier: ObservableObject {
     /// so instead of leaving an ineffective toggle switched on.
     @Published private(set) var authorizationState: NotificationAuthorization.State = .undetermined
 
-    /// `UNUserNotificationCenter.current()` needs a real application bundle: it
-    /// throws `bundleProxyForCurrentProcess is nil` otherwise, which is what
-    /// `swift run` gives you. Hence `lazy` — as a stored property it would be
-    /// evaluated in `init`, before `isAvailable` ever gets a say, and take the
-    /// documented development flow down with it.
-    private lazy var center = UNUserNotificationCenter.current()
+    private let scheduler: any NotificationScheduling
+    private let isAvailable: Bool
 
-    private var isAvailable: Bool { Bundle.main.bundleIdentifier != nil }
+    /// `isAvailable` defaults to "running as a real application bundle", the only
+    /// place the system centre can be used.
+    init(
+        scheduler: any NotificationScheduling = SystemNotificationScheduler(),
+        isAvailable: Bool = Bundle.main.bundleIdentifier != nil
+    ) {
+        self.scheduler = scheduler
+        self.isAvailable = isAvailable
+    }
 
     func sync(events: [CalendarEvent], preferences: Preferences, now: Date = .now) async {
         guard isAvailable else { return }
 
         guard preferences.notifiesBeforeEvents else {
-            center.removeAllPendingNotificationRequests()
+            scheduler.removeAllPending()
             authorizationState = NotificationAuthorization.state(
-                for: await center.notificationSettings().authorizationStatus
+                for: await scheduler.authorizationStatus()
             )
             return
         }
@@ -40,7 +77,7 @@ final class EventNotifier: ObservableObject {
             now: now
         )
 
-        center.removeAllPendingNotificationRequests()
+        scheduler.removeAllPending()
         for planned in plan {
             await schedule(planned)
         }
@@ -48,7 +85,7 @@ final class EventNotifier: ObservableObject {
     }
 
     private func isAuthorized() async -> Bool {
-        let status = await center.notificationSettings().authorizationStatus
+        let status = await scheduler.authorizationStatus()
         Log.notifications.debug("Authorization status: \(status.rawValue, privacy: .public)")
         authorizationState = NotificationAuthorization.state(for: status)
 
@@ -57,7 +94,7 @@ final class EventNotifier: ObservableObject {
             return true
         case .undetermined:
             do {
-                let granted = try await center.requestAuthorization(options: [.alert, .sound])
+                let granted = try await scheduler.requestAuthorization()
                 authorizationState = granted ? .allowed : .blocked
                 return granted
             } catch {
@@ -91,7 +128,7 @@ final class EventNotifier: ObservableObject {
         )
 
         do {
-            try await center.add(request)
+            try await scheduler.add(request)
         } catch {
             Log.notifications.error("Scheduling failed: \(error.localizedDescription, privacy: .public)")
         }

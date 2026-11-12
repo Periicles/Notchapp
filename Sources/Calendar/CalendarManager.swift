@@ -12,12 +12,13 @@ final class CalendarManager: ObservableObject {
         case denied
     }
 
-    private let store = EKEventStore()
+    private let store: EKEventStore
+    private let currentAuthorizationStatus: () -> EKAuthorizationStatus
     private var refreshTask: Task<Void, Never>?
     // nonisolated(unsafe): only written/read on MainActor; nonisolated so deinit
     // can hand the tokens back. Block-based observers are NOT removed by
     // removeObserver(self) — only the token they returned can unregister them.
-    private nonisolated(unsafe) var observerTokens: [NSObjectProtocol] = []
+    nonisolated(unsafe) private var observerTokens: [NSObjectProtocol] = []
 
     @Published private(set) var authorizationState: AuthorizationState = .unknown
     @Published private(set) var availableCalendars: [EKCalendar] = []
@@ -29,6 +30,25 @@ final class CalendarManager: ObservableObject {
     /// All-day events of the same window, kept apart: they never drive the panel
     /// or notifications, they only keep the empty state from lying.
     @Published private(set) var allDayEvents: [CalendarEvent] = []
+
+    /// The seed state and the status reader exist so the layers above can be
+    /// tested without a calendar database or a permission prompt; the app uses
+    /// the defaults.
+    init(
+        store: EKEventStore = EKEventStore(),
+        authorizationStatus: @escaping () -> EKAuthorizationStatus = { EKEventStore.authorizationStatus(for: .event) },
+        authorizationState: AuthorizationState = .unknown,
+        availableCalendars: [EKCalendar] = [],
+        events: [CalendarEvent] = [],
+        allDayEvents: [CalendarEvent] = []
+    ) {
+        self.store = store
+        self.currentAuthorizationStatus = authorizationStatus
+        self.authorizationState = authorizationState
+        self.availableCalendars = availableCalendars
+        self.events = events
+        self.allDayEvents = allDayEvents
+    }
 
     deinit {
         refreshTask?.cancel()
@@ -58,7 +78,7 @@ final class CalendarManager: ObservableObject {
     /// Cheap synchronous check used on the hover path: has the OS authorization
     /// status diverged from our cached state, in either direction?
     func authorizationStatusChanged() -> Bool {
-        Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event)) != authorizationState
+        Self.mapAuthorizationStatus(currentAuthorizationStatus()) != authorizationState
     }
 
     /// Reconcile the cached authorization with the system's. Handles both a grant
@@ -69,7 +89,7 @@ final class CalendarManager: ObservableObject {
     /// so a caller reacting to the same trigger can skip re-fetching.
     @discardableResult
     func reevaluateAuthorizationIfNeeded(using preferences: Preferences) async -> Bool {
-        let latest = Self.mapAuthorizationStatus(EKEventStore.authorizationStatus(for: .event))
+        let latest = Self.mapAuthorizationStatus(currentAuthorizationStatus())
         guard latest != authorizationState else { return false }
 
         let wasGranted = authorizationState == .granted
@@ -258,7 +278,7 @@ final class CalendarManager: ObservableObject {
     }
 
     private func requestAccessIfNeeded() async -> AuthorizationState {
-        let status = EKEventStore.authorizationStatus(for: .event)
+        let status = currentAuthorizationStatus()
         guard status == .notDetermined else {
             return Self.mapAuthorizationStatus(status)
         }
