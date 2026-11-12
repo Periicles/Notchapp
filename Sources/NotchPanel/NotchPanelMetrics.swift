@@ -34,4 +34,34 @@ enum NotchPanelMetrics {
     static var effectiveOrbClearance: CGFloat {
         (contentHorizontalPadding + contentTrailingClearance) - (orbTrailingPadding + orbDiameter)
     }
+
+    // MARK: - Vertical layout around the physical notch
+    //
+    // The panel window starts `topBleed` above the screen, and the notch is a
+    // hardware cut-out: anything drawn inside it simply is not displayed. Content
+    // therefore has to start below `notchBottomEdge`, which depends on the
+    // screen's real notch height — a fixed top padding is only right on one Mac.
+
+    /// Space kept between the notch's lower edge and the content under it.
+    static let notchContentGap: CGFloat = 6
+
+    /// Height of the content area below the notch: title row, progress bar,
+    /// metrics row and the bottom padding. Fixed, so the layout reads the same
+    /// whatever the notch height; only the room above it grows.
+    static let contentAreaHeight: CGFloat = 115
+
+    /// Distance from the window's top edge down to the notch's lower edge.
+    static func notchBottomEdge(notchHeight: CGFloat, topBleed: CGFloat) -> CGFloat {
+        topBleed + notchHeight
+    }
+
+    /// Inset the open panel's content must keep from the window's top edge.
+    static func contentTopInset(notchHeight: CGFloat, topBleed: CGFloat) -> CGFloat {
+        notchBottomEdge(notchHeight: notchHeight, topBleed: topBleed) + notchContentGap
+    }
+
+    /// Height of the open panel's window for a notch of `notchHeight`.
+    static func panelHeight(notchHeight: CGFloat, topBleed: CGFloat) -> CGFloat {
+        contentTopInset(notchHeight: notchHeight, topBleed: topBleed) + contentAreaHeight
+    }
 }
