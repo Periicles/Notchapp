@@ -47,10 +47,23 @@ struct AnimatedProgressBar: View {
                             .blendMode(.screen)
                         }
                         .clipShape(Capsule())
+                        .overlay(alignment: .trailing) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.85))
+                                .frame(width: Self.headWidth)
+                                .blur(radius: 0.6)
+                        }
+                        .shadow(color: tint.opacity(0.85), radius: Self.glowRadius)
+                        .shadow(color: tint.opacity(0.45), radius: Self.glowRadius / 2)
                 }
             }
         }
     }
+
+    /// Radius of the neon halo around the filled part.
+    private static let glowRadius: CGFloat = 6
+    /// The bright tip that marks where the progress currently is.
+    private static let headWidth: CGFloat = 3
 }
 
 struct TimeRangeView: View {
