@@ -160,16 +160,32 @@ The test target depends on `XCTest`, which ships with full Xcode (not Command Li
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
+The suite has three layers, told apart by class name so each can run on its own:
+
+| Layer | What it covers | Run it |
+|---|---|---|
+| Unit | Pure logic and single types | `swift test --skip "IntegrationTests\|E2ETests"` |
+| Integration | Real objects wired together (progress model, calendar manager, notifier) against fakes of the system boundaries | `swift test --filter IntegrationTests` |
+| E2E | The real SwiftUI views rendered offscreen and checked pixel by pixel — nothing under the notch, nothing drawn at rest unless asked, bars filling in proportion | `swift test --filter E2ETests` |
+
+Line coverage must stay at or above 80 %:
+
+```sh
+swift test --enable-code-coverage && scripts/check-coverage.sh 80
+```
+
+Four files that are thin glue over a live window server (`NotchBarApp`, `NotchPanelController`, `NotchPanelWindow`, `TrackingContainerView`) are left out of the measure; `scripts/smoke-launch.sh .build/release/NotchBar` checks instead that the built app starts and stays up.
+
 **Linting**
 
 Install [SwiftLint](https://github.com/realm/SwiftLint) and run it from the project root:
 
 ```sh
 brew install swiftlint
-swiftlint
+swiftlint --strict
 ```
 
-The CI pipeline runs `swiftlint` on every PR. Fix all errors before pushing.
+The CI pipeline runs `swiftlint --strict` on every PR — warnings fail it too. Tests are linted with a relaxed set of rules (`Tests/.swiftlint.yml`). Fix everything before pushing.
 
 ## Contributing
 
@@ -194,13 +210,13 @@ docs: document five-state model in README
 
 **Before opening a PR**
 
-1. `swift test` — all tests pass
-2. `swiftlint` — zero errors
+1. `swift test` — all tests pass, coverage stays at or above 80 %
+2. `swiftlint --strict` — zero violations
 3. New non-trivial logic is covered by tests
 4. One concern per PR — avoid mixing features with refactors
 5. Add an entry under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) when behavior changes
 
-The CI pipeline (lint → build → test) runs automatically on every PR. A PR cannot be merged with a failing CI.
+The CI pipeline (lint → build, unit → integration → E2E → coverage, plus a launch smoke test) runs automatically on every PR. A PR cannot be merged with a failing CI.
 
 Dependabot (`.github/dependabot.yml`) opens one grouped PR a week to bump the GitHub Actions used by the workflows. The package has no third-party Swift dependencies, so nothing else is tracked.
 
