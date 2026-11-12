@@ -7,6 +7,8 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-12
+
 ### Changed
 
 - **The resting progress line now follows the notch's contour.** Instead of a flat
@@ -17,6 +19,10 @@ NotchBar adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the open panel's bar now has rounded ends (line only), a glow in the event's
   colour, and the bar a bright tip marking the current position. The resting line
   is 4pt thick instead of 3.
+- **Stricter lint, layered tests and a coverage gate.** SwiftLint now fails on
+  warnings and covers the tests; the suite is split into unit, integration and
+  end-to-end layers (the latter render the real views and check the pixels), and
+  CI enforces 80% line coverage and checks that the built app starts.
 
 ### Fixed
 
@@ -204,7 +210,9 @@ First public pre-release.
 - Hover-expanded notch panel with live progress on the current calendar event.
 - Calendar selection, launch at login, `.dmg` packaging and a landing page.
 
-[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/Periicles/Notchapp/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Periicles/Notchapp/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/Periicles/Notchapp/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/Periicles/Notchapp/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Periicles/Notchapp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Periicles/Notchapp/compare/v0.3.0...v0.3.1
