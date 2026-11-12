@@ -21,8 +21,9 @@ jobs:
             "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
           unzip -q swiftlint.zip -d "$RUNNER_TEMP/swiftlint"
           echo "$RUNNER_TEMP/swiftlint" >> "$GITHUB_PATH"
+      # --strict: a warning is a violation, so the rule set cannot erode quietly.
       - name: Run SwiftLint
-        run: swiftlint
+        run: swiftlint --strict
 
   build:
     name: Build
@@ -35,16 +36,70 @@ jobs:
       - name: Build
         run: swift build -c release
 
-  test:
-    name: Test
+  # Pure logic and single types, no collaborators.
+  unit:
+    name: Unit tests
+    runs-on: macos-15
+    needs: lint
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Unit tests
+        run: swift test --skip "IntegrationTests|E2ETests"
+
+  # Several real objects wired together (model + calendar manager + preferences,
+  # notifier + planner) against fakes of the system boundaries.
+  integration:
+    name: Integration tests
+    runs-on: macos-15
+    needs: unit
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Integration tests
+        run: swift test --filter IntegrationTests
+
+  # The real views rendered offscreen and checked pixel by pixel.
+  e2e:
+    name: E2E tests
+    runs-on: macos-15
+    needs: integration
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Rendering tests
+        run: swift test --filter E2ETests
+
+  coverage:
+    name: Coverage
+    runs-on: macos-15
+    needs: e2e
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run all tests with coverage
+        run: swift test --enable-code-coverage
+      - name: Enforce the coverage threshold
+        run: scripts/check-coverage.sh 80
+
+  # The release binary has to start and stay up: nothing else exercises @main,
+  # the app delegate or the panel controller.
+  smoke:
+    name: Launch smoke test
     runs-on: macos-15
     needs: build
     env:
       DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
-      - name: Test
-        run: swift test
+      - name: Build
+        run: swift build -c release
+      - name: Launch and stay up
+        run: scripts/smoke-launch.sh .build/release/NotchBar
 
   # The release job runs this script on Linux while it is developed on macOS,
   # where BSD and GNU disagree (mktemp templates, sed -i). Rehearsing the real

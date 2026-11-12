@@ -1,5 +1,5 @@
-@preconcurrency import XCTest
 @testable import NotchBar
+@preconcurrency import XCTest
 
 @MainActor
 final class PreferencesTests: XCTestCase {

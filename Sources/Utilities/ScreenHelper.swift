@@ -20,7 +20,7 @@ enum ScreenHelper {
     }
 
     static func panelRect() -> NSRect {
-        let screenFrame = preferredScreen().frame
+        let screenFrame = preferredScreen()?.frame ?? fallbackScreenFrame
         return NSRect(
             x: screenFrame.midX - panelWidth / 2,
             y: screenFrame.maxY - panelHeight + panelTopBleed,
@@ -30,14 +30,7 @@ enum ScreenHelper {
     }
 
     static func sensorRect() -> NSRect {
-        let closedRect = closedNotchRect()
-
-        return NSRect(
-            x: closedRect.minX,
-            y: closedRect.minY,
-            width: closedRect.width,
-            height: closedRect.height
-        )
+        closedNotchRect()
     }
 
     /// How far the physical notch's centre sits right of the screen's centre.
@@ -45,12 +38,16 @@ enum ScreenHelper {
     /// notch is off-centre by a fraction of a point — enough to open a visible
     /// gap on one side of anything drawn tight around it.
     static func notchCenterOffset() -> CGFloat {
-        let screen = preferredScreen()
-        guard let topLeftArea = screen.auxiliaryTopLeftArea,
+        guard let screen = preferredScreen(),
+              let topLeftArea = screen.auxiliaryTopLeftArea,
               let topRightArea = screen.auxiliaryTopRightArea else {
             return 0
         }
-        return (topLeftArea.maxX + topRightArea.minX) / 2 - screen.frame.midX
+        return centerOffset(
+            leftAreaMaxX: topLeftArea.maxX,
+            rightAreaMinX: topRightArea.minX,
+            screenMidX: screen.frame.midX
+        )
     }
 
     static func collapsedWidth() -> CGFloat {
@@ -61,32 +58,24 @@ enum ScreenHelper {
         closedNotchSize().height
     }
 
-    private static func closedNotchRect() -> NSRect {
-        let screen = preferredScreen()
-        let closedSize = closedNotchSize(for: screen)
+    // MARK: - Pure geometry
 
-        return NSRect(
-            x: screen.frame.midX - closedSize.width / 2,
-            y: screen.frame.maxY - closedSize.height,
-            width: closedSize.width,
-            height: closedSize.height
-        )
-    }
-
-    private static func closedNotchSize(for screen: NSScreen = preferredScreen()) -> CGSize {
+    /// The notch is whatever the two menu bar areas leave between them; a screen
+    /// without a notch (or too small a result) gets the fallback so the panel
+    /// still has something to hang from.
+    static func notchSize(
+        screenWidth: CGFloat,
+        leftAreaWidth: CGFloat?,
+        rightAreaWidth: CGFloat?,
+        safeAreaTop: CGFloat,
+        menuBarHeight: CGFloat
+    ) -> CGSize {
         var width = closedNotchFallbackSize.width
-        var height = closedNotchFallbackSize.height
-
-        if let topLeftArea = screen.auxiliaryTopLeftArea,
-           let topRightArea = screen.auxiliaryTopRightArea {
-            width = screen.frame.width - topLeftArea.width - topRightArea.width
+        if let leftAreaWidth, let rightAreaWidth {
+            width = screenWidth - leftAreaWidth - rightAreaWidth
         }
 
-        if screen.safeAreaInsets.top > 0 {
-            height = screen.safeAreaInsets.top
-        } else {
-            height = max(closedNotchFallbackSize.height, screen.frame.maxY - screen.visibleFrame.maxY)
-        }
+        let height = safeAreaTop > 0 ? safeAreaTop : menuBarHeight
 
         return CGSize(
             width: max(width, closedNotchFallbackSize.width),
@@ -94,8 +83,41 @@ enum ScreenHelper {
         )
     }
 
-    private static func preferredScreen() -> NSScreen {
-        NSScreen.screens.first(where: isBuiltInDisplay) ?? NSScreen.main ?? NSScreen.screens[0]
+    static func centerOffset(leftAreaMaxX: CGFloat, rightAreaMinX: CGFloat, screenMidX: CGFloat) -> CGFloat {
+        (leftAreaMaxX + rightAreaMinX) / 2 - screenMidX
+    }
+
+    // MARK: - Screen lookup
+
+    private static let fallbackScreenFrame = NSRect(x: 0, y: 0, width: 1512, height: 982)
+
+    private static func closedNotchRect() -> NSRect {
+        let screenFrame = preferredScreen()?.frame ?? fallbackScreenFrame
+        let closedSize = closedNotchSize()
+
+        return NSRect(
+            x: screenFrame.midX - closedSize.width / 2,
+            y: screenFrame.maxY - closedSize.height,
+            width: closedSize.width,
+            height: closedSize.height
+        )
+    }
+
+    private static func closedNotchSize() -> CGSize {
+        guard let screen = preferredScreen() else { return closedNotchFallbackSize }
+
+        return notchSize(
+            screenWidth: screen.frame.width,
+            leftAreaWidth: screen.auxiliaryTopLeftArea?.width,
+            rightAreaWidth: screen.auxiliaryTopRightArea?.width,
+            safeAreaTop: screen.safeAreaInsets.top,
+            menuBarHeight: screen.frame.maxY - screen.visibleFrame.maxY
+        )
+    }
+
+    /// `nil` only when no display is attached, as on a headless machine.
+    private static func preferredScreen() -> NSScreen? {
+        NSScreen.screens.first(where: isBuiltInDisplay) ?? NSScreen.main ?? NSScreen.screens.first
     }
 
     private static func isBuiltInDisplay(screen: NSScreen) -> Bool {
